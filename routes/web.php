@@ -18,6 +18,18 @@ Route::get('/media',function(){
     return view('media');
 })->name('media');
 
+
+Route::get('/meeting/form', function () {
+    return view('Meeting.form');   // folder "Meeting" + file "form.blade.php"
+})->name('meeting.form');
+Route::post('/meetings', [MeetingController::class, 'store'])->name('meetings.store');
+
+
+
+
+
+
+
 Route::get('/dashboard', function () {
     return view('dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
@@ -33,7 +45,7 @@ Route::middleware('auth')->group(function () {
     // Resource routes for meetings
   Route::get('/meetings',[MeetingController::class,'index']);
   Route::get('/meetings/create',[MeetingController::class,'create']);
-  Route::post('/meetings',[MeetingController::class,'store']);
+//   Route::post('/meetings',[MeetingController::class,'store']);
 
 });
 

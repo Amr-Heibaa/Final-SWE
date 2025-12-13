@@ -5,8 +5,8 @@
         <div class="container">
             <div class="nav-row">
                 <a class="brand" href="{{ url('/') }}">
-                    <div class="brand-badge" aria-hidden="true"><span>M</span></div>
-                    <span>ManufacTrack</span>
+                    <div class="brand-badge" aria-hidden="true"><span>AAA </span></div>
+                    <span>AAA Studios</span>
                 </a>
 
                 <nav class="nav-links" aria-label="Primary">
@@ -14,7 +14,7 @@
                     <a class="nav-link" href="{{ route('about') }}">Our Story</a>
                     <a class="nav-link" href="{{ route('operations') }}">Operations</a>
                     <a class="nav-link" href="{{ route('media') }}">Media</a>
-                    <a class="nav-link" href="#contact">Contact</a>
+<a class="nav-link" href="{{ route('meeting.form') }}#contact">Contact</a>
                 </nav>
 
                 <div class="nav-actions">
@@ -211,23 +211,59 @@
 
             <div class="clients-grid">
                 <div class="client-tile">
-                    <div class="client-logo">BA</div>
+                    <img src="{{ asset('images/1.jpg') }}" alt="Client logo" class="client-logo-img">
                 </div>
+
+
                 <div class="client-tile">
-                    <div class="client-logo">BB</div>
+                    <img src="{{ asset('images/2.jpg') }}" alt="Client logo" class="client-logo-img">
                 </div>
+
+
                 <div class="client-tile">
-                    <div class="client-logo">BC</div>
+                    <img src="{{ asset('images/3.jpg') }}" alt="Client logo" class="client-logo-img">
                 </div>
+
+
                 <div class="client-tile">
-                    <div class="client-logo">BD</div>
+                    <img src="{{ asset('images/4.jpg') }}" alt="Client logo" class="client-logo-img">
                 </div>
+
+
                 <div class="client-tile">
-                    <div class="client-logo">BE</div>
+                    <img src="{{ asset('images/5.jpg') }}" alt="Client logo" class="client-logo-img">
                 </div>
+
                 <div class="client-tile">
-                    <div class="client-logo">BF</div>
+                    <img src="{{ asset('images/6.jpg') }}" alt="Client logo" class="client-logo-img">
                 </div>
+
+
+                <div class="client-tile">
+                    <img src="{{ asset('images/7.jpg') }}" alt="Client logo" class="client-logo-img">
+                </div>
+
+                <div class="client-tile">
+                    <img src="{{ asset('images/8.jpg') }}" alt="Client logo" class="client-logo-img">
+                </div>
+
+                <div class="client-tile">
+                    <img src="{{ asset('images/9.jpg') }}" alt="Client logo" class="client-logo-img">
+                </div>
+
+                <div class="client-tile">
+                    <img src="{{ asset('images/10.jpg') }}" alt="Client logo" class="client-logo-img">
+                </div>
+
+                <div class="client-tile">
+                    <img src="{{ asset('images/11.jpg') }}" alt="Client logo" class="client-logo-img">
+                </div>
+
+                <div class="client-tile">
+                    <img src="{{ asset('images/12.jpg') }}" alt="Client logo" class="client-logo-img">
+                </div>
+
+
             </div>
         </div>
     </section>

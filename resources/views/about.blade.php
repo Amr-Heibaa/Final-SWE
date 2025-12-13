@@ -4,8 +4,8 @@
         <div class="container">
             <div class="nav-row">
                 <a class="brand" href="{{ url('/') }}">
-                    <div class="brand-badge" aria-hidden="true"><span>M</span></div>
-                    <span>ManufacTrack</span>
+                    <div class="brand-badge" aria-hidden="true"><span>AAA </span></div>
+                    <span>AAA Studios</span>
                 </a>
 
                 <nav class="nav-links" aria-label="Primary">
