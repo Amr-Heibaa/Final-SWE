@@ -38,6 +38,6 @@ class Meeting extends Model
 
     public function orders()
     {
-        //has many to order::class
+        return $this->hasMany(Order::class, 'meeting_id');
     }
 }
