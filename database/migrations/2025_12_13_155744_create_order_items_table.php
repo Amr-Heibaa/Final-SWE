@@ -13,22 +13,24 @@ return new class extends Migration
     {
         Schema::create('order_items', function (Blueprint $table) {
             $table->id();
-                 $table->string('name');
+            $table->string('name');
             $table->string('fabric_name')->nullable();
             $table->boolean('has_printing')->default(false);
             $table->text('description')->nullable();
-
-            // Pricing and quantity
-
             $table->integer('single_price'); // int price
             $table->timestamps();
 
 
-                 $table->foreignId('order_id')
-                  ->constrained('orders')
-                  ->onDelete('cascade');
+                 // FIXED: Use uuid() instead of foreignId() for UUID reference
+            $table->uuid('order_id');
 
-                 
+             // Add foreign key constraint manually
+            $table->foreign('order_id')
+                ->references('id')
+                ->on('orders')
+                ->onDelete('cascade');
+
+
         });
     }
 

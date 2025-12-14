@@ -24,7 +24,7 @@ class Order extends Model
         'requires_printing',
         'current_phase',
         'completed_at',
-        'created by'
+        'created by',
 
     ];
     protected $casts = [
@@ -46,5 +46,9 @@ class Order extends Model
     public function creator()
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+    public function items()
+    {
+        return $this->hasMany(OrderItem::class);
     }
 }

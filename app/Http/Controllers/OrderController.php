@@ -35,7 +35,7 @@ class OrderController extends Controller
                     ->with('error', 'You do not have permission to access order management.');
             }
             return $next($request);
-        });
+           });   
 
         // Apply to all methods except specific ones (if any)
         // $this->middleware('admin')->except(['myOrders', 'myOrder']);
@@ -83,7 +83,7 @@ class OrderController extends Controller
         $phases = OrderPhaseEnum::forDropdown(true);
 
         // Get customers for filter dropdown (only customers, not admins)
-        $customers = User::where('role', 'customer')->get(['id', 'name', 'email']);
+        $customers = User::where('role', RoleEnum::CUSTOMER->value)->get(['id', 'name', 'email']);
 
         return view('orders.index', compact('orders', 'phases', 'customers'));
 

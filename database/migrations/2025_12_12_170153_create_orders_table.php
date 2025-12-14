@@ -14,10 +14,10 @@ return new class extends Migration
         Schema::create('orders', function (Blueprint $table) {
             $table->uuid('id')->primary();
             //date
-                   $table->integer('total_price');
+                $table->integer('total_price');
             $table->boolean('requires_printing')->default(false);
             $table->enum('current_phase',
-             ['cutting', 'printing', 'sewing', 'packaging', 'delivery', 'completed'])->default('cutting');
+            ['cutting', 'printing', 'sewing', 'packaging', 'delivery', 'completed'])->default('cutting');
 
 
             // Creator
@@ -29,10 +29,10 @@ return new class extends Migration
             ->constrained('users')
             ->onDelete('cascade');
             //meeting
-            $table->foreignId('meeting_id')
-            ->nullable()
-            ->constrained('users')
-            ->onDelete('set null');
+        $table->foreignId('meeting_id')
+        ->nullable()
+        ->constrained('meetings')  
+        ->onDelete('set null');
 
 
             $table->index('customer_id');
