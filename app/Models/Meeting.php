@@ -19,8 +19,11 @@ class Meeting extends Model
 
     protected $fillable = [
         'customer_id',
+        'name',
+        'phone',
+        'brand_name',
         'scheduled_date',
-        'status',
+        'status'
     ];
 
     protected $guarded = ['id'];
@@ -38,6 +41,6 @@ class Meeting extends Model
 
     public function orders()
     {
-        return $this->hasMany(Order::class, 'meeting_id');
+        return $this->hasMany(Order::class);
     }
 }

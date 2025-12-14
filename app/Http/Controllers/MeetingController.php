@@ -19,12 +19,12 @@ class MeetingController extends Controller
             ->paginate(10);
 
         // Lma n3mll el views 
-        // return view('meeting.index', [
-        //     'meetings' => $meetings,
-        //     'pageTitle' => 'My Meetings',
-        // ]);
+        return view('meeting.index', [
+            'meetings' => $meetings,
+            'pageTitle' => 'My Meetings',
+        ]);
 
-        return response()->json($meetings);
+        // return response()->json($meetings);
     }
 
     /**
@@ -33,13 +33,13 @@ class MeetingController extends Controller
     public function create()
     {
         // Lma n3mll el views 
-        // return view('meeting.create', [
-        //     'pageTitle' => 'Create New Meeting',
-        // ]);
-
-        return response()->json([
-            'message' => 'Provide scheduled_date to create a meeting.',
+        return view('meeting.form', [
+            'pageTitle' => 'Create New Meeting',
         ]);
+
+        // return response()->json([
+        //     'message' => 'Provide scheduled_date to create a meeting.',
+        // ]);
     }
 
     /**
@@ -47,19 +47,20 @@ class MeetingController extends Controller
      */
     public function store(MeetingRequest $meetingRequest)
     {
-        $meeting = new Meeting();
-        $meeting->customer_id = auth()->id();
-        $meeting->scheduled_date = $meetingRequest['scheduled_date'];
-        $meeting->status = $meetingRequest['status'] ?? 'pending';
-        $meeting->save();
+        $data = $meetingRequest->validated();
 
+        $meeting = Meeting::create([
+            'customer_id'    => auth()->id(),
+            'name'           => $data['name'],
+            'phone'          => $data['phone'],
+            'brand_name'     => $data['brand_name'],
+            'scheduled_date' => $data['scheduled_date'],
+            'status'         => 'pending',
+        ]);
         // Lma n3mll el views 
-        // return redirect('/meetings')->with('success', 'Meeting created successfully');
+        return redirect('/dashboard')->with('success', 'Meeting created successfully');
 
-        return response()->json([
-            'message' => 'Meeting created successfully',
-            'meeting' => $meeting,
-        ], 201);
+
     }
 
     /**
@@ -69,14 +70,10 @@ class MeetingController extends Controller
     {
 
         abort_unless($meeting->customer_id === auth()->id(), 403);
-
-        // Lma n3mll el views 
-        // return view('meeting.show', [
-        //     'meeting' => $meeting,
-        //     'pageTitle' => 'Meeting Details',
-        // ]);
-
-        return response()->json($meeting);
+        return view('Meeting.show', [
+            'meeting' => $meeting,
+            'pageTitle' => 'Meeting Details',
+        ]);
     }
 
 
@@ -86,13 +83,12 @@ class MeetingController extends Controller
     public function edit(Meeting $meeting)
     {
         abort_unless($meeting->customer_id === auth()->id(), 403);
-        // Lma n3mll el views 
-        // return view('meeting.edit', [
-        //     'meeting' => $meeting,
-        //     'pageTitle' => 'Edit Meeting',
-        // ]);
 
-        return response()->json($meeting);
+    return view('Meeting.edit', [
+        'meeting' => $meeting,
+        'pageTitle' => 'Edit Meeting',
+    ]);
+        // return response()->json($meeting);
     }
 
     /**
@@ -100,14 +96,15 @@ class MeetingController extends Controller
      */
     public function update(MeetingRequest $meetingRequest, Meeting $meeting)
     {
-   abort_unless($meeting->customer_id === auth()->id(), 403);
+        abort_unless($meeting->customer_id === auth()->id(), 403);
 
-    $meeting->update($meetingRequest->validated());
-        // Lma n3mll el views 
-        // return redirect('/meetings')->with('success', 'Meeting updated successfully');
-        return response()->json([
-            'message' => 'Meeting updated successfully',
-            'meeting' => $meeting,
+        $data = $meetingRequest->validated();
+
+        $meeting->update([
+            'name'           => $data['name'] ?? $meeting->name,
+            'phone'          => $data['phone'] ?? $meeting->phone,
+            'brand_name'     => $data['brand_name'] ?? $meeting->brand_name,
+            'scheduled_date' => $data['scheduled_date'] ?? $meeting->scheduled_date,
         ]);
     }
 
