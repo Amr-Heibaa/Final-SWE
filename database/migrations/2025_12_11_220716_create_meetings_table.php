@@ -18,6 +18,10 @@ return new class extends Migration
                 ->constrained('users')
                 ->onDelete('cascade');
 
+            $table->string('name');
+            $table->string('phone', 20);
+            $table->string('brand_name');
+
             $table->dateTime('scheduled_date');
 
             $table->enum('status', ['pending', 'completed', 'cancelled'])

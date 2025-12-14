@@ -3,6 +3,7 @@
 use App\Http\Controllers\MeetingController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ProfileController;
+use App\Models\Meeting;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -20,10 +21,6 @@ Route::get('/media',function(){
 })->name('media');
 
 
-Route::get('/meeting/form', function () {
-    return view('Meeting.form');   // folder "Meeting" + file "form.blade.php"
-})->name('meeting.form');
-Route::post('/meetings', [MeetingController::class, 'store'])->name('meetings.store');
 
 
 
@@ -31,9 +28,10 @@ Route::post('/meetings', [MeetingController::class, 'store'])->name('meetings.st
 
 
 
-Route::get('/dashboard', function () {
-    return view('dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+
+// Route::get('/dashboard', function () {
+//     return view('dashboard');
+// })->middleware(['auth', 'verified'])->name('dashboard');
 
 
 
@@ -43,10 +41,9 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
 
-    // Resource routes for meetings
-    Route::get('/meetings',[MeetingController::class,'index']);
-    Route::get('/meetings/create',[MeetingController::class,'create']);
-    //   Route::post('/meetings',[MeetingController::class,'store']);
+    Route::resource('meetings', MeetingController::class);
+
+
 
     Route::resource('orders', OrderController::class);
 
@@ -58,6 +55,13 @@ Route::middleware('auth')->group(function () {
     Route::get('/my-orders', [OrderController::class, 'myOrders'])->name('orders.my-orders');
     Route::get('/my-orders/{order}', [OrderController::class, 'myOrder'])->name('orders.my-order');
 });
+Route::middleware(['auth'])->get('/dashboard', function () {
+    $meetings = Meeting::where('customer_id', auth()->id())
+        ->latest('scheduled_date')
+        ->paginate(10);
+
+    return view('dashboard', compact('meetings'));
+})->name('dashboard');
 
 
 

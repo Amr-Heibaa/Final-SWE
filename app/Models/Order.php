@@ -41,7 +41,7 @@ class Order extends Model
     }
     public function meeting()
     {
-        return $this->belongsTo(Meeting::class, 'meeting_id');
+        return $this->belongsTo(Meeting::class);
     }
     public function creator()
     {
