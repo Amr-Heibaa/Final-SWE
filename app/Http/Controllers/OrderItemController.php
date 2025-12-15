@@ -2,64 +2,89 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Order;
 use App\Models\OrderItem;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class OrderItemController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
+
+    // Optional: list items for one order
+    public function index(Order $order)
     {
-        //
+        $order->load('items');   // no sizes
+
+        return response()->json([
+            'items' => $order->items,
+        ]);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
+    // Create a new item for an existing order (no sizes here)
+    public function store(Request $request, Order $order)
     {
-        //
+        $data = $request->validate([
+            'name'         => 'required|string|max:255',
+            'fabric_name'  => 'nullable|string|max:255',
+            'has_printing' => 'boolean',
+            'description'  => 'nullable|string',
+            'single_price' => 'required|numeric|min:0',
+        ]);
+
+        $item = $order->items()->create([
+            'name'         => $data['name'],
+            'fabric_name'  => $data['fabric_name'] ?? null,
+            'has_printing' => $data['has_printing'] ?? false,
+            'description'  => $data['description'] ?? null,
+            'single_price' => $data['single_price'],
+        ]);
+
+        return response()->json([
+            'message' => 'Item created.',
+            'item'    => $item,
+        ]);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
+    // Update item fields only
+    public function update(Request $request, Order $order, OrderItem $orderItem)
     {
-        //
+        if ($orderItem->order_id !== $order->id) {
+            abort(404);
+        }
+
+        $data = $request->validate([
+            'name'         => 'required|string|max:255',
+            'fabric_name'  => 'nullable|string|max:255',
+            'has_printing' => 'boolean',
+            'description'  => 'nullable|string',
+            'single_price' => 'required|numeric|min:0',
+        ]);
+
+        $orderItem->update([
+            'name'         => $data['name'],
+            'fabric_name'  => $data['fabric_name'] ?? null,
+            'has_printing' => $data['has_printing'] ?? false,
+            'description'  => $data['description'] ?? null,
+            'single_price' => $data['single_price'],
+        ]);
+
+        return response()->json([
+            'message' => 'Item updated.',
+            'item'    => $orderItem,
+        ]);
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(OrderItem $order_items)
+    // Delete the item only; sizes handled elsewhere (cascade/other controller)
+    public function destroy(Order $order, OrderItem $orderItem)
     {
-        //
-    }
+        if ($orderItem->order_id !== $order->id) {
+            abort(404);
+        }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(OrderItem $order_items)
-    {
-        //
-    }
+        $orderItem->delete();
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, OrderItem $order_items)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(OrderItem $order_items)
-    {
-        //
+        return response()->json([
+            'message' => 'Item deleted.',
+        ]);
     }
 }
