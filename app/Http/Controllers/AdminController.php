@@ -76,7 +76,7 @@ class AdminController extends Controller
 
         $admins = User::where('role', RoleEnum::ADMIN)->get();
 
-        return view('admin.index', ['admins' => $admins]);
+        return view('admin.admin-index', ['admins' => $admins]);
     }
 
     /**
@@ -88,7 +88,7 @@ class AdminController extends Controller
             abort(403, 'Unauthorized');
         }
 
-        return view('admin.create');
+        return view('admin.admin-create');
     }
 
     /**
