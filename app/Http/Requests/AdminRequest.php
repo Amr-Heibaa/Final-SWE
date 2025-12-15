@@ -4,14 +4,15 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use App\Enums\RoleEnum;
 use App\Models\User;
 
 class AdminRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        // Only Super Admin can create/edit admins
-        return $this->user()->role === 'super_admin';
+        // ✅ CORRECT - compare enum objects
+        return $this->user()->role === RoleEnum::SUPER_ADMIN;
     }
 
     public function rules(): array
@@ -27,7 +28,6 @@ class AdminRequest extends FormRequest
             ],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
             'phone' => ['required', 'string', 'max:20'],
-            'role' => ['required', Rule::in(['admin', 'admin_manager'])],
         ];
     }
 }
