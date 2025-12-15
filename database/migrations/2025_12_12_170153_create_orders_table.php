@@ -28,10 +28,13 @@ return new class extends Migration
             $table->foreignId('customer_id')
             ->constrained('users')
             ->onDelete('cascade');
+
+            $table->string('customer_name');          // NEW
+            $table->string('brand_name')->nullable(); // NEW
             //meeting
         $table->foreignId('meeting_id')
         ->nullable()
-        ->constrained('meetings')  
+        ->constrained('meetings')
         ->onDelete('set null');
 
 

@@ -7,62 +7,67 @@ use App\Http\Requests\AdminRequest;
 use App\Models\Meeting;
 use App\Models\Order;
 use App\Models\User;
+use App\Models\Size;
+use Illuminate\Support\Facades\DB;
+use App\Enums\SizeEnum;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use App\Http\Controllers\OrderController;
-use App\Http\Controllers\MeetingController;
+use App\Enums\OrderPhaseEnum;
+use App\Http\Requests\StoreOrderRequest;
+use App\Models\OrderItem;
+use App\Models\OrderItemSize;
 
 class AdminController extends Controller
 {
+    public function dashboard()
+    {
+        $user = Auth::user();
+        $role = $user->role instanceof RoleEnum ? $user->role->value : (string)$user->role;
+
+        // CUSTOMER: نفس الوضع القديم (meetings بتاعته)
+        if ($role === RoleEnum::CUSTOMER->value || $role === 'customer') {
+            $meetings = Meeting::where('customer_id', $user->id)->latest()->paginate(10);
+            return view('dashboard', compact('meetings'));
+        }
+
+        // ADMIN: يشوف customers اللي عنده + orders بتاعتهم
+        if ($role === RoleEnum::ADMIN->value || $role === 'admin') {
+            $customerIds = Order::where('created_by', $user->id)
+                ->pluck('customer_id')
+                ->unique()
+                ->values();
+
+            $customers = User::where('role', RoleEnum::CUSTOMER->value)
+                ->whereIn('id', $customerIds)
+                ->latest()
+                ->paginate(10);
+
+            $orders = Order::with('customer')
+                ->where('created_by', $user->id)
+                ->latest()
+                ->paginate(10);
+
+            return view('dashboard', compact('customers', 'orders'));
+        }
+
+        // SUPERADMIN: يشوف admins + customers + orders (كله)
+        if ($role === RoleEnum::SUPER_ADMIN->value || $role === 'superAdmin') {
+            $admins = User::where('role', RoleEnum::ADMIN->value)->latest()->paginate(10);
+            $customers = User::where('role', RoleEnum::CUSTOMER->value)->latest()->paginate(10);
+            $orders = Order::with('customer')->latest()->paginate(10);
+
+            return view('dashboard', compact('admins', 'customers', 'orders'));
+        }
+
+        abort(403);
+    }
+
     // ==================== ADMIN MANAGEMENT (SUPER_ADMIN ONLY) ====================
 
     /**
      * Display a listing of all admins
      */
-public function dashboard()
-{
-    $user = Auth::user();
-    $role = $user->role instanceof RoleEnum ? $user->role->value : (string)$user->role;
-
-    // CUSTOMER: نفس الوضع القديم (meetings بتاعته)
-    if ($role === RoleEnum::CUSTOMER->value || $role === 'customer') {
-        $meetings = Meeting::where('customer_id', $user->id)->latest()->paginate(10);
-        return view('dashboard', compact('meetings'));
-    }
-
-    // ADMIN: يشوف customers اللي عنده + orders بتاعتهم
-    if ($role === RoleEnum::ADMIN->value || $role === 'admin') {
-        $customerIds = Order::where('created_by', $user->id)
-            ->pluck('customer_id')
-            ->unique()
-            ->values();
-
-        $customers = User::where('role', RoleEnum::CUSTOMER->value)
-            ->whereIn('id', $customerIds)
-            ->latest()
-            ->paginate(10);
-
-        $orders = Order::with('customer')
-            ->where('created_by', $user->id)
-            ->latest()
-            ->paginate(10);
-
-        return view('dashboard', compact('customers', 'orders'));
-    }
-
-    // SUPERADMIN: يشوف admins + customers + orders (كله)
-    if ($role === RoleEnum::SUPER_ADMIN->value || $role === 'superAdmin') {
-        $admins = User::where('role', RoleEnum::ADMIN->value)->latest()->paginate(10);
-        $customers = User::where('role', RoleEnum::CUSTOMER->value)->latest()->paginate(10);
-        $orders = Order::with('customer')->latest()->paginate(10);
-
-        return view('dashboard', compact('admins', 'customers', 'orders'));
-    }
-
-    abort(403);
-}
-
     public function index()
     {
         if (Auth::user()->role !== RoleEnum::SUPER_ADMIN) {
@@ -189,7 +194,7 @@ public function dashboard()
     {
         $user = Auth::user();
 
-        if (!in_array($user->role, [RoleEnum::SUPER_ADMIN, RoleEnum::ADMIN])) {
+        if ($user->role !== RoleEnum::SUPER_ADMIN && $user->role !== RoleEnum::ADMIN) {
             abort(403, 'Unauthorized');
         }
 
@@ -198,8 +203,8 @@ public function dashboard()
         } else {
             // Admin sees only their customers
             $customers = User::where('role', RoleEnum::CUSTOMER)
-                            ->where('admin_id', $user->id)
-                            ->get();
+                ->where('admin_id', $user->id)
+                ->get();
         }
 
         return view('admin.customer-index', ['customers' => $customers]);
@@ -212,7 +217,7 @@ public function dashboard()
     {
         $user = Auth::user();
 
-        if (!in_array($user->role, [RoleEnum::SUPER_ADMIN, RoleEnum::ADMIN])) {
+        if ($user->role !== RoleEnum::SUPER_ADMIN && $user->role !== RoleEnum::ADMIN) {
             abort(403, 'Unauthorized');
         }
 
@@ -226,7 +231,7 @@ public function dashboard()
     {
         $user = Auth::user();
 
-        if (!in_array($user->role, [RoleEnum::SUPER_ADMIN, RoleEnum::ADMIN])) {
+        if ($user->role !== RoleEnum::SUPER_ADMIN && $user->role !== RoleEnum::ADMIN) {
             abort(403, 'Unauthorized');
         }
 
@@ -258,7 +263,7 @@ public function dashboard()
     {
         $currentUser = Auth::user();
 
-        if (!in_array($currentUser->role, [RoleEnum::SUPER_ADMIN, RoleEnum::ADMIN])) {
+        if ($currentUser->role !== RoleEnum::SUPER_ADMIN && $currentUser->role !== RoleEnum::ADMIN) {
             abort(403, 'Unauthorized');
         }
 
@@ -281,7 +286,7 @@ public function dashboard()
     {
         $currentUser = Auth::user();
 
-        if (!in_array($currentUser->role, [RoleEnum::SUPER_ADMIN, RoleEnum::ADMIN])) {
+        if ($currentUser->role !== RoleEnum::SUPER_ADMIN && $currentUser->role !== RoleEnum::ADMIN) {
             abort(403, 'Unauthorized');
         }
 
@@ -304,7 +309,7 @@ public function dashboard()
     {
         $currentUser = Auth::user();
 
-        if (!in_array($currentUser->role, [RoleEnum::SUPER_ADMIN, RoleEnum::ADMIN])) {
+        if ($currentUser->role !== RoleEnum::SUPER_ADMIN && $currentUser->role !== RoleEnum::ADMIN) {
             abort(403, 'Unauthorized');
         }
 
@@ -336,7 +341,7 @@ public function dashboard()
     {
         $currentUser = Auth::user();
 
-        if (!in_array($currentUser->role, [RoleEnum::SUPER_ADMIN, RoleEnum::ADMIN])) {
+        if ($currentUser->role !== RoleEnum::SUPER_ADMIN && $currentUser->role !== RoleEnum::ADMIN) {
             abort(403, 'Unauthorized');
         }
 
@@ -353,4 +358,237 @@ public function dashboard()
 
         return redirect()->route('admin.customer-index')->with('success', 'Customer deleted successfully');
     }
+
+    // ==================== ORDER MANAGEMENT (ADMIN & SUPER_ADMIN) ====================
+
+    /**
+     * Display a listing of all orders
+     */
+    public function orderIndex(Request $request)
+    {
+        $user = Auth::user();
+
+        if ($user->role !== RoleEnum::SUPER_ADMIN && $user->role !== RoleEnum::ADMIN) {
+            abort(403, 'Unauthorized');
+        }
+
+        // Base query with relationships
+        $orders = Order::with(['customer', 'meeting', 'creator'])->latest();
+
+        // Apply filters if provided
+        if ($request->filled('customer_id')) {
+            $orders->where('customer_id', $request->customer_id);
+        }
+
+        if ($request->filled('meeting_id')) {
+            $orders->where('meeting_id', $request->meeting_id);
+        }
+
+        if ($request->filled('phase')) {
+            $orders->where('current_phase', $request->phase);
+        }
+
+        if ($request->has('requires_printing')) {
+            $orders->where('requires_printing', $request->boolean('requires_printing'));
+        }
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $orders->where(function ($query) use ($search) {
+                $query->whereHas('customer', function ($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%")
+                        ->orWhere('email', 'like', "%{$search}%");
+                });
+            });
+        }
+
+        // Paginate results
+        $orders = $orders->paginate(20);
+
+        // Get phases for filter dropdown
+        $phases = OrderPhaseEnum::forDropdown(true);
+
+        // Get customers for filter dropdown (only customers)
+        $customers = User::where('role', RoleEnum::CUSTOMER)->get(['id', 'name', 'email']);
+
+        return view('admin.order-index', compact('orders', 'phases', 'customers'));
+    }
+
+      public function ordershow(Order $order)
+    {
+        // Authorization - For customers, check if order belongs to them
+        if (Auth::user()->role === RoleEnum::CUSTOMER && $order->customer_id !== Auth::id()) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        // Eager load all related data
+        $order->load([
+            'customer',
+            'meeting',
+            'creator',
+            'items.itemSizes.size',
+            'items.sizes' // via many-to-many
+        ]);
+
+        // Calculate item totals for display
+        $itemTotals = [];
+        foreach ($order->items as $item) {
+            $totalQuantity = 0;
+            $totalPrice = 0;
+
+            foreach ($item->itemSizes as $itemSize) {
+                $totalQuantity += $itemSize->quantity;
+                $totalPrice += $item->single_price * $itemSize->quantity;
+            }
+            $itemTotals[$item->id] = [
+                'quantity' => $totalQuantity,
+                'total_price' => $totalPrice,
+            ];
+        }
+
+        return view('orders.show', compact('order', 'itemTotals'));
+    }
+    /**
+ * Show the form for creating a new order
+ */
+public function orderCreate()
+{
+    $user = Auth::user();
+
+    if ($user->role !== RoleEnum::SUPER_ADMIN && $user->role !== RoleEnum::ADMIN) {
+        abort(403, 'Unauthorized');
+    }
+
+    $customers = User::where('role', RoleEnum::CUSTOMER)->get(['id', 'name', 'email', 'brand_name']);
+    $meetings = Meeting::whereIn('status', ['pending', 'completed'])
+        ->with('customer')
+        ->get(['id', 'scheduled_date', 'customer_id', 'name']);
+    $sizes = Size::all(['id', 'name', 'sort_order']);
+    $phases = OrderPhaseEnum::cases();
+
+    return view('admin.order-create', compact('customers', 'meetings', 'sizes', 'phases'));
+}
+/**
+ * Show the form for editing an order
+ */
+public function orderEdit(Order $order)
+{
+    $user = Auth::user();
+
+    if ($user->role !== RoleEnum::SUPER_ADMIN && $user->role !== RoleEnum::ADMIN) {
+        abort(403, 'Unauthorized');
+    }
+
+    if ($order->current_phase !== OrderPhaseEnum::PENDING && $order->current_phase !== OrderPhaseEnum::CUTTING) {
+        return redirect()->route('admin.order-show', $order->id)
+            ->with('error', 'Order cannot be edited in the current phase.');
+    }
+
+    $order->load(['items.itemSizes.size', 'customer', 'meeting']);
+
+    $customers = User::where('role', RoleEnum::CUSTOMER)->get(['id', 'name', 'email', 'brand_name']);
+    $meetings = Meeting::whereIn('status', ['pending', 'completed'])
+        ->with('customer')
+        ->get(['id', 'scheduled_date', 'customer_id', 'name']);
+    $sizes = Size::all(['id', 'name', 'sort_order']);
+    $phases = OrderPhaseEnum::cases();
+
+    return view('admin.order-edit', compact('order', 'customers', 'meetings', 'sizes', 'phases'));
+}
+ public function orderstore(StoreOrderRequest $request)
+    {
+        // Validate the main order data
+        $validated = $request->validated();
+
+            // Find the customer to copy name/brand
+    $customer = User::findOrFail($validated['customer_id']);
+
+        // Start database transaction
+        DB::beginTransaction();
+
+        try {
+            // Calculate total price from items
+            $totalPrice = 0;
+
+            // Create the order - use validated data (customer_id, meeting_id, requires_printing, current_phase, created_by)
+            $order = Order::create([
+            'customer_id'       => $customer->id,
+            'customer_name'     => $customer->name,
+            'brand_name'        => $customer->brand_name ?? null,
+                'meeting_id' => $validated['meeting_id'] ?? null,
+                'requires_printing' => $validated['requires_printing'] ?? false,
+                'current_phase' => $validated['current_phase'],
+                'total_price' => 0, // Will update after calculating
+                'created_by' => Auth::id(), // From StoreOrderRequest validated() method
+            ]);
+
+            // Process each order item
+            foreach ($validated['items'] as $itemData) {
+                // Create order item
+                $orderItem = OrderItem::create([
+                    'order_id' => $order->id,
+                    'name' => $itemData['name'],
+                    'fabric_name' => $itemData['fabric_name'] ?? null,
+                    'has_printing' => $itemData['has_printing'] ?? false,
+                    'description' => $itemData['description'] ?? null,
+                    'single_price' => $itemData['single_price'],
+                ]);
+
+                // Process sizes for this item
+                foreach ($itemData['sizes'] as $sizeData) {
+                    // Create order item size (with quantity)
+                    OrderItemSize::create([
+                        'order_item_id' => $orderItem->id,
+                        'size_id' => $sizeData['size_id'],
+                        'quantity' => $sizeData['quantity'],
+                    ]);
+
+                    // Add to total price: single_price * quantity
+                    $totalPrice += $itemData['single_price'] * $sizeData['quantity'];
+                }
+            }
+
+            // Update order with calculated total price
+            $order->update(['total_price' => $totalPrice]);
+
+            // Commit transaction
+            DB::commit();
+
+            return redirect()->route('orders.show', $order->id)
+                ->with('success', 'Order created successfully!');
+        } catch (\Exception $e) {
+            // Rollback transaction on error
+            DB::rollBack();
+
+            return back()->withInput()
+                ->with('error', 'Failed to create order: ' . $e->getMessage());
+        }
+    }     public function orderdestroy(Order $order)
+    {
+
+        // Only allow deletion in pending phase
+        if ($order->current_phase !== OrderPhaseEnum::PENDING->value) {
+            return redirect()->route('orders.show', $order->id)
+                ->with('error', 'Only pending orders can be deleted.');
+        }
+
+        // Start transaction for safe deletion
+        DB::beginTransaction();
+
+        try {
+            // Delete related records through cascade
+            $order->delete();
+
+            DB::commit();
+
+            return redirect()->route('orders.index')
+                ->with('success', 'Order deleted successfully.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return redirect()->route('orders.show', $order->id)
+                ->with('error', 'Failed to delete order: ' . $e->getMessage());
+        }
+    }
+
 }

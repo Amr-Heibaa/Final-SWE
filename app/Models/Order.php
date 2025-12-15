@@ -9,6 +9,8 @@ use Illuminate\Database\Eloquent\Model;
 /**
  * @property int $id
  * @property int $customer_id
+ * @property string $customer_name
+ * @property string|null $brand_name
  * @property int|null $meeting_id
  * @property float $total_price
  * @property string $current_phase
@@ -26,12 +28,14 @@ class Order extends Model
 
     protected $fillable = [
         'customer_id',
+        'customer_name',
+        'brand_name',
         'meeting_id',
         'total_price',
         'requires_printing',
         'current_phase',
         'completed_at',
-        'created by',
+        'created_by',
 
     ];
     protected $casts = [
