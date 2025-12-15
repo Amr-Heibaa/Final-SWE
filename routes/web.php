@@ -44,23 +44,16 @@ Route::middleware('auth')->group(function () {
 
     Route::resource('meetings', MeetingController::class);
 
-
-
-    Route::resource('orders', OrderController::class);
-
-    Route::get('/my-orders', [OrderController::class, 'myOrders'])
-    ->name('orders.my-orders')
-    ->middleware('auth');
-
-
-    // Additional order routes
-    Route::get('/orders/customer/{customer}', [OrderController::class, 'byCustomer'])->name('orders.by-customer');
-    Route::get('/orders/meeting/{meeting}', [OrderController::class, 'byMeeting'])->name('orders.by-meeting');
-    Route::get('/orders/statistics', [OrderController::class, 'statistics'])->name('orders.statistics');
-    Route::post('/orders/{order}/phase', [OrderController::class, 'updatePhase'])->name('orders.update-phase');
-    Route::get('/my-orders', [OrderController::class, 'myOrders'])->name('orders.my-orders');
-    Route::get('/my-orders/{order}', [OrderController::class, 'myOrder'])->name('orders.my-order');
 });
+Route::middleware(['auth', 'verified'])->group(function () {
+
+    // Customer: can only list and view their own orders
+    Route::get('/orders', [OrderController::class, 'index'])
+        ->name('orders.index');
+    Route::get('/orders/{order}', [OrderController::class, 'show'])
+        ->name('orders.show');
+        });
+        
 Route::middleware(['auth'])->get('/dashboard', function () {
     $meetings = Meeting::where('customer_id', auth()->id())
         ->latest('scheduled_date')
