@@ -4,23 +4,22 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
-use Symfony\Component\HttpFoundation\Response;
 
 class RoleMiddleware
 {
-    public function handle(Request $request, Closure $next, ...$roles): Response
+    public function handle(Request $request, Closure $next, ...$roles)
     {
         $user = $request->user();
         if (!$user) abort(403);
 
-        // role ممكن Enum أو string
-        $userRole = $user->role?->value ?? $user->role;
+        // لو role Enum خد value، لو string استخدمه زي ما هو
+        $userRole = is_object($user->role) && property_exists($user->role, 'value')
+            ? $user->role->value
+            : (string) $user->role;
 
-        // normalize
-        $norm = fn($v) => strtolower(str_replace([' ', '-'], '_', (string) $v));
-
-        $userRole = $norm($userRole);
-        $roles = array_map($norm, $roles);
+        // normalize (case-insensitive)
+        $userRole = strtolower($userRole);
+        $roles = array_map(fn ($r) => strtolower(trim($r)), $roles);
 
         if (!in_array($userRole, $roles, true)) {
             abort(403);

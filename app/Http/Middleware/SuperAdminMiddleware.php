@@ -4,20 +4,18 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
-use Symfony\Component\HttpFoundation\Response;
+use Illuminate\Support\Facades\Auth;
 
 class SuperAdminMiddleware
 {
-    public function handle(Request $request, Closure $next): Response
+    public function handle(Request $request, Closure $next)
     {
-        $user = $request->user();
+        $user = Auth::user();
         if (!$user) abort(403);
 
-        $role = $user->role?->value ?? $user->role;
-        $role = strtolower(str_replace([' ', '-'], '_', (string) $role));
+        $role = $user->role?->value ?? (string) $user->role;
 
-        // عدل القيم حسب Enum عندك: superAdmin أو super_admin
-        if (!in_array($role, ['superadmin', 'super_admin'], true)) {
+        if ($role !== 'super_admin' && $role !== 'superAdmin') { // اختار واحدة بس بعد ما توحّد
             abort(403);
         }
 
