@@ -495,10 +495,13 @@ public function orderEdit(Order $order)
 
     return view('admin.order-edit', compact('order', 'customers', 'meetings', 'sizes', 'phases'));
 }
-  public function orderstore(StoreOrderRequest $request)
+ public function orderstore(StoreOrderRequest $request)
     {
         // Validate the main order data
         $validated = $request->validated();
+
+            // Find the customer to copy name/brand
+    $customer = User::findOrFail($validated['customer_id']);
 
         // Start database transaction
         DB::beginTransaction();
@@ -509,7 +512,9 @@ public function orderEdit(Order $order)
 
             // Create the order - use validated data (customer_id, meeting_id, requires_printing, current_phase, created_by)
             $order = Order::create([
-                'customer_id' => $validated['customer_id'],
+            'customer_id'       => $customer->id,
+            'customer_name'     => $customer->name,
+            'brand_name'        => $customer->brand_name ?? null,
                 'meeting_id' => $validated['meeting_id'] ?? null,
                 'requires_printing' => $validated['requires_printing'] ?? false,
                 'current_phase' => $validated['current_phase'],
@@ -558,8 +563,7 @@ public function orderEdit(Order $order)
             return back()->withInput()
                 ->with('error', 'Failed to create order: ' . $e->getMessage());
         }
-    }
-     public function orderdestroy(Order $order)
+    }     public function orderdestroy(Order $order)
     {
 
         // Only allow deletion in pending phase
