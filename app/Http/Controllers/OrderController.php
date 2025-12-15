@@ -311,4 +311,19 @@ class OrderController extends Controller
                 ->with('error', 'Failed to delete order: ' . $e->getMessage());
         }
     }
+
+    public function myOrders(Request $request)
+{
+    if (Auth::user()->role !== RoleEnum::CUSTOMER) {
+        return redirect()->route('orders.index');
+    }
+
+    $orders = Order::with(['customer','meeting','creator','items.itemSizes'])
+        ->where('customer_id', Auth::id())
+        ->latest()
+        ->paginate(10);
+
+    return view('orders.index', compact('orders'));
+}
+
 }

@@ -17,7 +17,7 @@
                         <a class="nav-link {{ request()->routeIs('about') ? 'active' : '' }}" href="{{ route('about') }}">Our Story</a>
                         <a class="nav-link {{ request()->routeIs('operations') ? 'active' : '' }}" href="{{ route('operations') }}">Operations</a>
                         <a class="nav-link {{ request()->routeIs('media') ? 'active' : '' }}" href="{{ route('media') }}">Media</a>
-                        <a class="nav-link" href="{{ route('home') }}#contact">Contact</a>
+                        <a class="nav-link" href="{{ route('meetings.create') }}">Contact</a>
                     </nav>
 
                     <div class="nav-actions">

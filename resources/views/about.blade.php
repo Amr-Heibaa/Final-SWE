@@ -17,7 +17,7 @@
                     <a class="nav-link active" href="{{ route('about') }}">Our Story</a>
                     <a class="nav-link" href="{{ route('operations') }}">Operations</a>
                     <a class="nav-link" href="{{ route('media') }}">Media</a>
-                    <a class="nav-link" href="{{ route('meetings.create') }}">Contact</a>
+                        <a class="nav-link" href="{{ route('meetings.create') }}">Contact</a>
                 </nav>
 
                 <div class="nav-actions">
