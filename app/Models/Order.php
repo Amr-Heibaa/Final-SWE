@@ -6,7 +6,14 @@ use App\Enums\OrderPhaseEnum;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 
 use Illuminate\Database\Eloquent\Model;
-
+/**
+ * @property int $id
+ * @property int $customer_id
+ * @property int|null $meeting_id
+ * @property float $total_price
+ * @property string $current_phase
+ * @property bool $requires_printing
+ */
 class Order extends Model
 {
     //

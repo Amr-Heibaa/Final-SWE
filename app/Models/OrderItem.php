@@ -4,10 +4,19 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
+ /**
+  * @property int $id
+  * @property int $order_id
+  * @property string $name
+  * @property string|null $fabric_name
+  * @property bool $has_printing
+  * @property string|null $description
+  * @property float $single_price
+  */
 class OrderItem extends Model
 {
 
-    
+
 
 
 
@@ -19,10 +28,10 @@ class OrderItem extends Model
         'fabric_name',
         'has_printing',
         'description',
-        
+
         'single_price',
-        
-        
+
+
     ];
 
     /**
@@ -37,7 +46,7 @@ class OrderItem extends Model
         protected $guarded=['id'];
 
           public function order() { return $this->belongsTo(Order::class); }
-        
+
 
           public function itemSizes()
 {
