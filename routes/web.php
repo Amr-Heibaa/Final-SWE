@@ -21,6 +21,15 @@ Route::middleware(['auth'])->group(function () {
 
     // Meetings + Orders (Resources)
     Route::resource('meetings', MeetingController::class);
+    Route::resource('orders', OrderController::class);
+
+    // Customer Orders Pages
+    Route::get('/my-orders', [OrderController::class, 'myOrders'])->name('orders.my-orders');
+    Route::get('/my-orders/{order}', [OrderController::class, 'myOrder'])->name('orders.my-order');
+
+    // Additional Order routes
+    Route::get('/orders/customer/{customer}', [OrderController::class, 'byCustomer'])->name('orders.by-customer');
+    Route::get('/orders/meeting/{meeting}', [OrderController::class, 'byMeeting'])->name('orders.by-meeting');
 
     // Dashboard
     Route::get('/dashboard', function () {
@@ -30,20 +39,6 @@ Route::middleware(['auth'])->group(function () {
 
         return view('dashboard', compact('meetings'));
     })->name('dashboard');
-});
-    /*
- * Auth + verified routes (orders for customers)
- */
-Route::middleware(['auth', 'verified'])->group(function () {
-
-    // Customer: can only list and view their own orders
-    Route::get('/orders', [OrderController::class, 'index'])
-        ->name('orders.index');
-    Route::get('/orders/{order}', [OrderController::class, 'show'])
-        ->name('orders.show');
-        });
-
-
 
     /**
      * ============================
@@ -75,4 +70,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::put('/admin/customers/{user}', [AdminController::class, 'customerUpdate'])->name('admin.customer-update');
         Route::delete('/admin/customers/{user}', [AdminController::class, 'customerDestroy'])->name('admin.customer-destroy');
     });
+});
+
 require __DIR__ . '/auth.php';
