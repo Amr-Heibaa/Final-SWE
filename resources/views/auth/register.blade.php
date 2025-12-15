@@ -17,6 +17,21 @@
         </div>
 
 
+        <!-- Brand Name -->
+        <div class="mt-4">
+            <x-input-label for="brand_name" :value="__('Brand Name')" />
+            <x-text-input
+                id="brand_name"
+                class="block mt-1 w-full"
+                type="text"
+                name="brand_name"
+                :value="old('brand_name')"
+                required
+                autocomplete="organization" />
+            <x-input-error :messages="$errors->get('brand_name')" class="mt-2" />
+        </div>
+
+
         <!-- Phone number -->
         <div class="mt-4">
             <x-input-label for="phone" :value="__('Phone')" class="block text-sm font-medium text-gray-700" />

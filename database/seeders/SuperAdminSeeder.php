@@ -15,6 +15,8 @@ class SuperAdminSeeder extends Seeder
             'email' => 'tripleAAA@gmail.com', // ← Change this
             'password' => Hash::make('password123'), // ← Change this to his actual password
             'phone' => '+01015447980',         // ← Add his phone
+                        'brand_name' => '', // <-- add this
+
             'role' => 'super_admin',            // ← Don't change this
         ]);
     }

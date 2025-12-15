@@ -15,10 +15,11 @@ class UserSeeder extends Seeder
         User::create([
             'name' => 'Admin User',
             'email' => 'amazin@boss.com',
-            'role' => RoleEnum::ADMIN,         
-            'status' => StatusEnum::ACTIVE,     
+            'role' => RoleEnum::ADMIN,
+            'status' => StatusEnum::ACTIVE,
+            'brand_name' => 'Admin', // <-- add this
+
             'password' => Hash::make('12345678'),
         ]);
-
     }
 }

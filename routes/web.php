@@ -70,7 +70,8 @@ Route::middleware(['auth'])->get('/dashboard', function () {
 })->name('dashboard');
 
 // Super Admin Routes
-Route::middleware(['auth', 'super_admin'])->group(function () {
+Route::middleware(['auth', 'role:superAdmin,admin'])->group(function () {
+
     // Admin Management Routes
     Route::get('/admin/admins', [AdminController::class, 'index'])->name('admin.index');
     Route::get('/admin/admins/create', [AdminController::class, 'create'])->name('admin.create');
