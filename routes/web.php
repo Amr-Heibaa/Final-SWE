@@ -47,6 +47,11 @@ Route::middleware('auth')->group(function () {
 
     Route::resource('orders', OrderController::class);
 
+    Route::get('/my-orders', [OrderController::class, 'myOrders'])
+    ->name('orders.my-orders')
+    ->middleware('auth');
+
+
     // Additional order routes
     Route::get('/orders/customer/{customer}', [OrderController::class, 'byCustomer'])->name('orders.by-customer');
     Route::get('/orders/meeting/{meeting}', [OrderController::class, 'byMeeting'])->name('orders.by-meeting');

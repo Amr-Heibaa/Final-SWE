@@ -24,22 +24,27 @@ class OrderController extends Controller
     /**
      * Constructor - Apply middleware for role-based access
      */
-    public function __construct()
-    {
-        // Only admins can access ALL order management (except specific routes)
-        $this->middleware(function ($request, $next) {
-            if (Auth::check() && Auth::user()->role === RoleEnum::CUSTOMER) {
-                // Customers should NOT access order management
-                // Redirect to dashboard or meetings page
-                    return redirect()->route('meetings.index')
+   public function __construct()
+{
+    $this->middleware(function ($request, $next) {
+
+        // اسم الروت الحالي
+        $routeName = optional($request->route())->getName();
+
+        // اسمح للـ customer بصفحاتهم فقط
+        $allowedForCustomer = ['orders.my-orders', 'orders.my-order'];
+
+        if (Auth::check() && Auth::user()->role === RoleEnum::CUSTOMER) {
+            if (!in_array($routeName, $allowedForCustomer)) {
+                return redirect()->route('meetings.index')
                     ->with('error', 'You do not have permission to access order management.');
             }
-            return $next($request);
-           });   
+        }
 
-        // Apply to all methods except specific ones (if any)
-        // $this->middleware('admin')->except(['myOrders', 'myOrder']);
-    }
+        return $next($request);
+    });
+}
+
 
     /**
      * Display a listing of the resource.
@@ -47,10 +52,10 @@ class OrderController extends Controller
     public function index(Request $request)
     {
 
-           // Base query with relationships
-        $orders = Order::with(['customer', 'meeting', 'creator']) ->latest();
+        // Base query with relationships
+        $orders = Order::with(['customer', 'meeting', 'creator'])->latest();
 
-         // Apply filters if provided
+        // Apply filters if provided
         if ($request->filled('customer_id')) {
             $orders->where('customer_id', $request->customer_id);
         }
@@ -68,10 +73,10 @@ class OrderController extends Controller
 
         if ($request->filled('search')) {
             $search = $request->search;
-            $orders->where(function($query) use ($search) {
-                $query->whereHas('customer', function($q) use ($search) {
+            $orders->where(function ($query) use ($search) {
+                $query->whereHas('customer', function ($q) use ($search) {
                     $q->where('name', 'like', "%{$search}%")
-                    ->orWhere('email', 'like', "%{$search}%");
+                        ->orWhere('email', 'like', "%{$search}%");
                 });
             });
         }
@@ -86,8 +91,6 @@ class OrderController extends Controller
         $customers = User::where('role', RoleEnum::CUSTOMER->value)->get(['id', 'name', 'email']);
 
         return view('orders.index', compact('orders', 'phases', 'customers'));
-
-
     }
 
     /**
@@ -95,7 +98,7 @@ class OrderController extends Controller
      */
     public function create()
     {
-         // Get customers (only customers)
+        // Get customers (only customers)
         $customers = User::where('role', RoleEnum::CUSTOMER)
             ->where('status', 'active')
             ->get(['id', 'name', 'email']);
@@ -112,7 +115,6 @@ class OrderController extends Controller
         $phases = OrderPhaseEnum::forDropdown(true);
 
         return view('orders.create', compact('customers', 'meetings', 'sizes', 'phases'));
-
     }
 
     /**
@@ -152,7 +154,7 @@ class OrderController extends Controller
                     'single_price' => $itemData['single_price'],
                 ]);
 
-                 // Process sizes for this item
+                // Process sizes for this item
                 foreach ($itemData['sizes'] as $sizeData) {
                     // Create order item size (with quantity)
                     OrderItemSize::create([
@@ -166,7 +168,7 @@ class OrderController extends Controller
                 }
             }
 
-             // Update order with calculated total price
+            // Update order with calculated total price
             $order->update(['total_price' => $totalPrice]);
 
             // Commit transaction
@@ -174,7 +176,6 @@ class OrderController extends Controller
 
             return redirect()->route('orders.show', $order->id)
                 ->with('success', 'Order created successfully!');
-
         } catch (\Exception $e) {
             // Rollback transaction on error
             DB::rollBack();
@@ -182,9 +183,6 @@ class OrderController extends Controller
             return back()->withInput()
                 ->with('error', 'Failed to create order: ' . $e->getMessage());
         }
-
-
-
     }
 
     /**
@@ -192,7 +190,7 @@ class OrderController extends Controller
      */
     public function show(Order $order)
     {
-            // Authorization - For customers, check if order belongs to them
+        // Authorization - For customers, check if order belongs to them
         if (Auth::user()->role === RoleEnum::CUSTOMER && $order->customer_id !== Auth::id()) {
             abort(403, 'Unauthorized action.');
         }
@@ -231,7 +229,7 @@ class OrderController extends Controller
     public function edit(Order $order)
     {
 
-         // Additional check: ensure order is in editable phase
+        // Additional check: ensure order is in editable phase
         if (!in_array($order->current_phase, [
             OrderPhaseEnum::PENDING->value,
             OrderPhaseEnum::CUTTING->value
@@ -240,7 +238,7 @@ class OrderController extends Controller
                 ->with('error', 'Order cannot be edited in the current phase.');
         }
 
-         // Authorization is handled in UpdateOrderRequest
+        // Authorization is handled in UpdateOrderRequest
         $order->load(['items.itemSizes', 'items.sizes']);
 
         // Get customers
@@ -268,7 +266,7 @@ class OrderController extends Controller
     public function update(UpdateOrderRequest $request, Order $order)
     {
 
-         // Get validated data
+        // Get validated data
         $validated = $request->validated();
 
         // Update the order
@@ -289,13 +287,13 @@ class OrderController extends Controller
     public function destroy(Order $order)
     {
 
-         // Only allow deletion in pending phase
+        // Only allow deletion in pending phase
         if ($order->current_phase !== OrderPhaseEnum::PENDING->value) {
             return redirect()->route('orders.show', $order->id)
                 ->with('error', 'Only pending orders can be deleted.');
         }
 
-         // Start transaction for safe deletion
+        // Start transaction for safe deletion
         DB::beginTransaction();
 
         try {
@@ -306,8 +304,7 @@ class OrderController extends Controller
 
             return redirect()->route('orders.index')
                 ->with('success', 'Order deleted successfully.');
-
-            } catch (\Exception $e) {
+        } catch (\Exception $e) {
             DB::rollBack();
 
             return redirect()->route('orders.show', $order->id)
@@ -342,7 +339,7 @@ class OrderController extends Controller
     public function byCustomer(User $customer)
     {
 
-         // Ensure the user is actually a customer
+        // Ensure the user is actually a customer
         if ($customer->role !== RoleEnum::CUSTOMER) {
             return redirect()->route('orders.index')
                 ->with('error', 'User is not a customer.');
@@ -413,13 +410,13 @@ class OrderController extends Controller
         if (Auth::user()->role !== RoleEnum::CUSTOMER) {
             return redirect()->route('orders.index');
         }
-
         $orders = Auth::user()->orders()
-            ->with(['meeting', 'creator'])
+            ->with(['meeting', 'creator', 'items.itemSizes']) // مهم
             ->latest()
             ->paginate(10);
 
-        return view('orders.my-orders', compact('orders'));
+
+        return view('orders.index', compact('orders'));
     }
     /**
      * Customer view - Show specific order (only if it belongs to them)
@@ -441,4 +438,3 @@ class OrderController extends Controller
         return view('orders.my-order', compact('order'));
     }
 }
-

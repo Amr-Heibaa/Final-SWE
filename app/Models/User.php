@@ -6,6 +6,7 @@ namespace App\Models;
 use App\Enums\RoleEnum;
 use App\Enums\StatusEnum;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -51,5 +52,16 @@ class User extends Authenticatable
             'role'   => RoleEnum::class,
             'status' => StatusEnum::class,
         ];
+    }
+
+       public function orders(): HasMany
+    {
+        return $this->hasMany(Order::class, 'customer_id');
+    }
+
+    // (اختياري) لو محتاج تجيب الأوردرز اللي اتعملت بواسطة الأدمن/الإيديتور
+    public function createdOrders(): HasMany
+    {
+        return $this->hasMany(Order::class, 'created_by');
     }
 }
