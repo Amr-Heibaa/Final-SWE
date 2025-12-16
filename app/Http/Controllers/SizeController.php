@@ -7,59 +7,85 @@ use Illuminate\Http\Request;
 
 class SizeController extends Controller
 {
+    public function __construct()
+    {
+        // Restrict to admins / super admins as you prefer (adjust middleware to your app)
+        $this->middleware(['auth', 'role:super_admin,admin']);
+    }
+
     /**
-     * Display a listing of the resource.
+     * List all available sizes.
+     * GET /admin/sizes
      */
     public function index()
     {
-        //
+        $sizes = Size::orderBy('sort_order')->get();
+
+        return view('sizes.index', compact('sizes'));
     }
 
     /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
-    {
-        //
-    }
-
-    /**
-     * Display the specified resource.
+     * Show a specific size.
+     * GET /admin/sizes/{size}
      */
     public function show(Size $size)
     {
-        //
+        return view('sizes.show', compact('size'));
     }
 
     /**
-     * Show the form for editing the specified resource.
+     * Store a new size.
+     * POST /admin/sizes
      */
-    public function edit(Size $size)
+    public function store(Request $request)
     {
-        //
+        $data = $request->validate([
+            'name'       => ['required', 'string', 'max:255', 'unique:sizes,name'],
+            'sort_order' => ['required', 'integer', 'min:0'],
+        ]);
+
+        Size::create($data);
+
+        return redirect()
+            ->back()
+            ->with('success', 'Size created successfully.');
     }
 
     /**
-     * Update the specified resource in storage.
+     * Update an existing size.
+     * PUT/PATCH /admin/sizes/{size}
      */
     public function update(Request $request, Size $size)
     {
-        //
+        $data = $request->validate([
+            'name'       => ['required', 'string', 'max:255', 'unique:sizes,name,' . $size->id],
+            'sort_order' => ['required', 'integer', 'min:0'],
+        ]);
+
+        $size->update($data);
+
+        return redirect()
+            ->back()
+            ->with('success', 'Size updated successfully.');
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Delete a size.
+     * DELETE /admin/sizes/{size}
      */
     public function destroy(Size $size)
     {
-        //
+        // Optional: prevent deleting sizes that are already used in order_item_sizes
+        if ($size->itemSizes()->exists()) {
+            return redirect()
+                ->back()
+                ->with('error', 'Cannot delete size that is used in order items.');
+        }
+
+        $size->delete();
+
+        return redirect()
+            ->back()
+            ->with('success', 'Size deleted successfully.');
     }
 }
