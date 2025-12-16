@@ -414,7 +414,7 @@ class AdminController extends Controller
         return view('admin.order-index', compact('orders', 'phases', 'customers'));
     }
 
-      public function ordershow(Order $order)
+    public function ordershow(Order $order)
     {
         // Authorization - For customers, check if order belongs to them
         if (Auth::user()->role === RoleEnum::CUSTOMER && $order->customer_id !== Auth::id()) {
@@ -449,59 +449,69 @@ class AdminController extends Controller
         return view('orders.show', compact('order', 'itemTotals'));
     }
     /**
- * Show the form for creating a new order
- */
-public function orderCreate()
-{
-    $user = Auth::user();
-
-    if ($user->role !== RoleEnum::SUPER_ADMIN && $user->role !== RoleEnum::ADMIN) {
-        abort(403, 'Unauthorized');
-    }
-
-    $customers = User::where('role', RoleEnum::CUSTOMER)->get(['id', 'name', 'email', 'brand_name']);
-    $meetings = Meeting::whereIn('status', ['pending', 'completed'])
-        ->with('customer')
-        ->get(['id', 'scheduled_date', 'customer_id', 'name']);
-    $sizes = Size::all(['id', 'name', 'sort_order']);
-    $phases = OrderPhaseEnum::cases();
-
-    return view('admin.order-create', compact('customers', 'meetings', 'sizes', 'phases'));
-}
-/**
- * Show the form for editing an order
- */
-public function orderEdit(Order $order)
-{
-    $user = Auth::user();
-
-    if ($user->role !== RoleEnum::SUPER_ADMIN && $user->role !== RoleEnum::ADMIN) {
-        abort(403, 'Unauthorized');
-    }
-
-    if ($order->current_phase !== OrderPhaseEnum::PENDING && $order->current_phase !== OrderPhaseEnum::CUTTING) {
-        return redirect()->route('admin.order-show', $order->id)
-            ->with('error', 'Order cannot be edited in the current phase.');
-    }
-
-    $order->load(['items.itemSizes.size', 'customer', 'meeting']);
-
-    $customers = User::where('role', RoleEnum::CUSTOMER)->get(['id', 'name', 'email', 'brand_name']);
-    $meetings = Meeting::whereIn('status', ['pending', 'completed'])
-        ->with('customer')
-        ->get(['id', 'scheduled_date', 'customer_id', 'name']);
-    $sizes = Size::all(['id', 'name', 'sort_order']);
-    $phases = OrderPhaseEnum::cases();
-
-    return view('admin.order-edit', compact('order', 'customers', 'meetings', 'sizes', 'phases'));
-}
- public function orderstore(StoreOrderRequest $request)
+     * Show the form for creating a new order
+     */
+    public function orderCreate()
     {
+        $user = Auth::user();
+
+        if ($user->role !== RoleEnum::SUPER_ADMIN && $user->role !== RoleEnum::ADMIN) {
+            abort(403, 'Unauthorized');
+        }
+
+        $customers = User::where('role', RoleEnum::CUSTOMER)->get(['id', 'name', 'email', 'brand_name']);
+        $meetings = Meeting::whereIn('status', ['pending', 'completed'])
+            ->with('customer')
+            ->get(['id', 'scheduled_date', 'customer_id', 'name']);
+
+        // ✅ Sizes من الـ Enum
+ $sizes = collect(SizeEnum::cases())->map(fn ($s) => [
+        'id'   => $s->value,
+        'name' => $s->label(),
+    ]);
+        $phases = OrderPhaseEnum::cases();
+
+          return view('admin.create-order', compact(
+        'customers','meetings','sizes','phases'
+    ));
+    }
+    /**
+     * Show the form for editing an order
+     */
+    public function orderEdit(Order $order)
+    {
+        $user = Auth::user();
+
+        if ($user->role !== RoleEnum::SUPER_ADMIN && $user->role !== RoleEnum::ADMIN) {
+            abort(403, 'Unauthorized');
+        }
+
+        if ($order->current_phase !== OrderPhaseEnum::PENDING && $order->current_phase !== OrderPhaseEnum::CUTTING) {
+            return redirect()->route('admin.order-show', $order->id)
+                ->with('error', 'Order cannot be edited in the current phase.');
+        }
+
+        $order->load(['items.itemSizes.size', 'customer', 'meeting']);
+
+        $customers = User::where('role', RoleEnum::CUSTOMER)->get(['id', 'name', 'email', 'brand_name']);
+        $meetings = Meeting::whereIn('status', ['pending', 'completed'])
+            ->with('customer')
+            ->get(['id', 'scheduled_date', 'customer_id', 'name']);
+        $sizes = Size::all(['id', 'name', 'sort_order']);
+        $phases = OrderPhaseEnum::cases();
+
+        return view('admin.order-edit', compact('order', 'customers', 'meetings', 'sizes', 'phases'));
+    }
+    public function orderstore(StoreOrderRequest $request)
+    {
+        dd($request->all());
+
+
         // Validate the main order data
         $validated = $request->validated();
 
-            // Find the customer to copy name/brand
-    $customer = User::findOrFail($validated['customer_id']);
+        // Find the customer to copy name/brand
+        $customer = User::findOrFail($validated['customer_id']);
 
         // Start database transaction
         DB::beginTransaction();
@@ -512,9 +522,9 @@ public function orderEdit(Order $order)
 
             // Create the order - use validated data (customer_id, meeting_id, requires_printing, current_phase, created_by)
             $order = Order::create([
-            'customer_id'       => $customer->id,
-            'customer_name'     => $customer->name,
-            'brand_name'        => $customer->brand_name ?? null,
+                'customer_id'       => $customer->id,
+                'customer_name'     => $customer->name,
+                'brand_name'        => $customer->brand_name ?? null,
                 'meeting_id' => $validated['meeting_id'] ?? null,
                 'requires_printing' => $validated['requires_printing'] ?? false,
                 'current_phase' => $validated['current_phase'],
@@ -536,15 +546,23 @@ public function orderEdit(Order $order)
 
                 // Process sizes for this item
                 foreach ($itemData['sizes'] as $sizeData) {
-                    // Create order item size (with quantity)
+                    $sizeId = data_get($sizeData, 'size_id');
+                    $qty    = (int) data_get($sizeData, 'quantity', 0);
+
+                    if (!$sizeId) {
+                        throw new \Exception('Size is required for each item.');
+                    }
+                    if ($qty < 1) {
+                        throw new \Exception('Quantity must be at least 1.');
+                    }
+
                     OrderItemSize::create([
                         'order_item_id' => $orderItem->id,
-                        'size_id' => $sizeData['size_id'],
-                        'quantity' => $sizeData['quantity'],
+                        'size_id'       => $sizeId,
+                        'quantity'      => $qty,
                     ]);
 
-                    // Add to total price: single_price * quantity
-                    $totalPrice += $itemData['single_price'] * $sizeData['quantity'];
+                    $totalPrice += $itemData['single_price'] * $qty;
                 }
             }
 
@@ -554,7 +572,7 @@ public function orderEdit(Order $order)
             // Commit transaction
             DB::commit();
 
-            return redirect()->route('orders.show', $order->id)
+            return redirect()->route('admin.orders.index')
                 ->with('success', 'Order created successfully!');
         } catch (\Exception $e) {
             // Rollback transaction on error
@@ -563,13 +581,14 @@ public function orderEdit(Order $order)
             return back()->withInput()
                 ->with('error', 'Failed to create order: ' . $e->getMessage());
         }
-    }     public function orderdestroy(Order $order)
+    }
+    public function orderdestroy(Order $order)
     {
 
         // Only allow deletion in pending phase
         if ($order->current_phase !== OrderPhaseEnum::PENDING->value) {
-            return redirect()->route('orders.show', $order->id)
-                ->with('error', 'Only pending orders can be deleted.');
+            return redirect()->route('admin.orders.index')
+                ->with('success', 'Order deleted successfully.');
         }
 
         // Start transaction for safe deletion
@@ -590,5 +609,4 @@ public function orderEdit(Order $order)
                 ->with('error', 'Failed to delete order: ' . $e->getMessage());
         }
     }
-
 }

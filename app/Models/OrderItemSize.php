@@ -7,14 +7,15 @@ use Illuminate\Database\Eloquent\Model;
 class OrderItemSize extends Model
 {
     //
-    protected $table='order_item_sizes';
+    protected $table = 'order_item_sizes';
 
-      protected $fillable = [
+    protected $fillable = [
         'order_item_id',
         'size_id',
         'quantity',
     ];
-     public function orderItem()
+
+    public function orderItem()
     {
         return $this->belongsTo(OrderItem::class);
     }

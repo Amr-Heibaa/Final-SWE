@@ -6,6 +6,7 @@ use App\Enums\OrderPhaseEnum;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 
 use Illuminate\Database\Eloquent\Model;
+
 /**
  * @property int $id
  * @property int $customer_id
@@ -31,13 +32,12 @@ class Order extends Model
         'customer_name',
         'brand_name',
         'meeting_id',
-        'total_price',
         'requires_printing',
         'current_phase',
-        'completed_at',
+        'total_price',
         'created_by',
-
     ];
+
     protected $casts = [
         'requires_printing' => 'boolean',
         'total_price' => 'integer',

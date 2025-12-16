@@ -4,15 +4,15 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
- /**
-  * @property int $id
-  * @property int $order_id
-  * @property string $name
-  * @property string|null $fabric_name
-  * @property bool $has_printing
-  * @property string|null $description
-  * @property float $single_price
-  */
+/**
+ * @property int $id
+ * @property int $order_id
+ * @property string $name
+ * @property string|null $fabric_name
+ * @property bool $has_printing
+ * @property string|null $description
+ * @property float $single_price
+ */
 class OrderItem extends Model
 {
 
@@ -20,44 +20,44 @@ class OrderItem extends Model
 
 
 
-            protected $table='order_items';
+  protected $table = 'order_items';
 
-      protected $fillable = [
-        'order_id',
-        'name',
-        'fabric_name',
-        'has_printing',
-        'description',
-
-        'single_price',
-
-
-    ];
-
-    /**
-     * Cast values to correct data types
-     */
-    protected $casts = [
-        'has_printing' => 'boolean',
-        'single_price' => 'integer',
-    ];
+  protected $fillable = [
+    'order_id',
+    'name',
+    'fabric_name',
+    'has_printing',
+    'description',
+    'single_price',
+  ];
 
 
-        protected $guarded=['id'];
+  /**
+   * Cast values to correct data types
+   */
+  protected $casts = [
+    'has_printing' => 'boolean',
+    'single_price' => 'integer',
+  ];
 
-          public function order() { return $this->belongsTo(Order::class); }
+
+  protected $guarded = ['id'];
+
+  public function order()
+  {
+    return $this->belongsTo(Order::class);
+  }
 
 
-          public function itemSizes()
-{
+  public function itemSizes()
+  {
     return $this->hasMany(OrderItemSize::class);
-}
+  }
 
   public function sizes()
-    {
-        return $this->belongsToMany(Size::class, 'order_item_sizes')
-            ->withPivot('quantity')
-            ->withTimestamps();
-    }
-
+  {
+    return $this->belongsToMany(Size::class, 'order_item_sizes')
+      ->withPivot('quantity')
+      ->withTimestamps();
+  }
 }

@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Enums\OrderPhaseEnum;
+use App\Enums\SizeEnum;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -12,11 +13,11 @@ class StoreOrderRequest extends FormRequest
      * Determine if the user is authorized to make this request.
      */
     public function authorize(): bool
-{
-    // Only admins can create orders
-    return auth()->check() &&
-        auth()->user()->role !== \App\Enums\RoleEnum::CUSTOMER;
-}
+    {
+        // Only admins can create orders
+        return auth()->check() &&
+            auth()->user()->role !== \App\Enums\RoleEnum::CUSTOMER;
+    }
     /**
      * Get the validation rules that apply to the request.
      *
@@ -25,38 +26,27 @@ class StoreOrderRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'customer_id' => [
-                'required',
-                'exists:users,id',
-                // Optional: ensure user is a customer
-                Rule::exists('users', 'id')->where('role', 'customer')
-            ],
-            'meeting_id' => [
-                'nullable',
-                'exists:meetings,id',
-                // Optional: ensure meeting belongs to the same customer
-                // Rule::exists('meetings', 'id')->where('customer_id', $this->customer_id)
-            ],
-            'requires_printing' => 'boolean',
-            'current_phase' => [
-                'required',
-                Rule::in(array_column(OrderPhaseEnum::cases(), 'value'))
-            ],
-            'items' => 'required|array|min:1',
-            'items.*.name' => 'required|string|max:255',
-            'items.*.fabric_name' => 'nullable|string|max:255',
-            'items.*.has_printing' => 'boolean',
-            'items.*.description' => 'nullable|string',
-            'items.*.single_price' => 'required|integer|min:100|max:10000000', // 1 to 100,000.00 in cents
-            'items.*.sizes' => 'required|array|min:1',
-            'items.*.sizes.*.size_id' => 'required|exists:sizes,id',
-            'items.*.sizes.*.quantity' => 'required|integer|min:1|max:1000',
+            'customer_id' => ['required', 'exists:users,id'],
+        'meeting_id' => ['nullable', 'exists:meetings,id'],
+        'current_phase' => ['required'],
+        'requires_printing' => ['nullable', 'boolean'],
+
+        'items' => ['required', 'array', 'min:1'],
+        'items.*.name' => ['required', 'string', 'max:255'],
+        'items.*.fabric_name' => ['nullable', 'string', 'max:255'],
+        'items.*.has_printing' => ['nullable', 'boolean'],
+        'items.*.description' => ['nullable', 'string'],
+        'items.*.single_price' => ['required', 'numeric', 'min:0'],
+
+        'items.*.sizes' => ['required', 'array', 'min:1'],
+        'items.*.sizes.*.size_id' => ['required', 'exists:sizes,id'],
+        'items.*.sizes.*.quantity' => ['required', 'integer', 'min:1'],
         ];
     }
     /**
      * Get custom messages for validator errors.
      */
-public function messages(): array
+    public function messages(): array
     {
         return [
             'customer_id.required' => 'Please select a customer.',
@@ -76,7 +66,7 @@ public function messages(): array
      */
     protected function prepareForValidation(): void
     {
-         // Convert string booleans to actual booleans
+        // Convert string booleans to actual booleans
         $this->merge([
             'requires_printing' => filter_var($this->requires_printing, FILTER_VALIDATE_BOOLEAN),
         ]);
@@ -84,8 +74,7 @@ public function messages(): array
         // Ensure all boolean fields in items are properly cast
         if ($this->has('items')) {
             $items = $this->items;
-            foreach ($items as &$item)
-                {
+            foreach ($items as &$item) {
                 if (isset($item['has_printing'])) {
                     $item['has_printing'] = filter_var($item['has_printing'], FILTER_VALIDATE_BOOLEAN);
                 }
@@ -108,4 +97,3 @@ public function messages(): array
         return $validated;
     }
 }
-
