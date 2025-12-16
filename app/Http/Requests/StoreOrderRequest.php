@@ -39,7 +39,7 @@ class StoreOrderRequest extends FormRequest
         'items.*.single_price' => ['required', 'numeric', 'min:0'],
 
         'items.*.sizes' => ['required', 'array', 'min:1'],
-        'items.*.sizes.*.size_id' => ['required', 'exists:sizes,id'],
+        'items.*.sizes.*.size_id' => ['required', 'exists:sizes,id'],  // ✅ DB sizes
         'items.*.sizes.*.quantity' => ['required', 'integer', 'min:1'],
         ];
     }
