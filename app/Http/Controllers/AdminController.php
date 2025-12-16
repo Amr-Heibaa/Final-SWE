@@ -253,7 +253,7 @@ class AdminController extends Controller
 
         User::create($validated);
 
-        return redirect()->route('admin.customer-index')->with('success', 'Customer created successfully');
+        return redirect()->route('admin.customer-create')->with('success', 'Customer created successfully');
     }
 
     /**

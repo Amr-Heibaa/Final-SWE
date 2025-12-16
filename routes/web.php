@@ -53,6 +53,9 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/admin/admins/{user}/edit', [AdminController::class, 'edit'])->name('admin.edit');
         Route::put('/admin/admins/{user}', [AdminController::class, 'update'])->name('admin.update');
         Route::delete('/admin/admins/{user}', [AdminController::class, 'destroy'])->name('admin.destroy');
+        Route::get('/admin/meetings', [MeetingController::class, 'adminIndex'])->name('admin.meetings.index');
+        Route::patch('/admin/meetings/{meeting}/status', [MeetingController::class, 'updateStatus'])->name('admin.meetings.update-status');
+
     });
 
 

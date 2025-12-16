@@ -2,9 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\MeetingStatus;
+use App\Enums\RoleEnum;
 use App\Http\Requests\MeetingRequest;
 use App\Models\Meeting;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class MeetingController extends Controller
 {
@@ -122,4 +125,51 @@ class MeetingController extends Controller
             'message' => 'Meeting deleted successfully',
         ]);
     }
+
+    public function adminIndex(Request $request)
+{
+    $user = Auth::user();
+
+    // أمان
+    if (!in_array($user->role, [RoleEnum::SUPER_ADMIN, RoleEnum::ADMIN])) {
+        abort(403);
+    }
+
+    $query = Meeting::with('customer')->latest();
+
+    // لو جاي customer_id من الزرار
+    if ($request->filled('customer_id')) {
+        $query->where('customer_id', $request->customer_id);
+    }
+
+    $meetings = $query->paginate(10);
+
+    return view('admin.meetings-index', compact('meetings'));
+}
+
+
+public function updateStatus(Request $request, Meeting $meeting)
+{
+    $user = Auth::user();
+
+    if (!in_array($user->role, [RoleEnum::ADMIN, RoleEnum::SUPER_ADMIN], true)) {
+        abort(403);
+    }
+
+    if ($user->role === RoleEnum::ADMIN) {
+        if (!$meeting->customer || $meeting->customer->admin_id !== $user->id) {
+            abort(403);
+        }
+    }
+
+    $data = $request->validate([
+        'status' => ['required', 'string'], 
+    ]);
+
+    $meeting->status = MeetingStatus::from($data['status']);
+    $meeting->save();
+
+    return back()->with('success', 'Meeting status updated.');
+}
+
 }
