@@ -55,12 +55,17 @@ Route::middleware(['auth', 'role:super_admin,admin'])
         |==========================
         */
         Route::get('/orders', [AdminController::class, 'orderIndex'])->name('orders.index');
-        Route::get('/orders/create', [AdminController::class, 'orderCreate'])->name('orders.create');
-        Route::post('/orders', [AdminController::class, 'orderstore'])->name('orders.store');
+    Route::get('/orders/create', [AdminController::class, 'orderCreate'])->name('orders.create');
+    Route::post('/orders', [AdminController::class, 'orderstore'])->name('orders.store');
 
-        Route::get('/orders/{order}', [AdminController::class, 'ordershow'])->name('orders.show');
-        Route::get('/orders/{order}/edit', [AdminController::class, 'orderEdit'])->name('orders.edit');
-        Route::delete('/orders/{order}', [AdminController::class, 'orderdestroy'])->name('orders.destroy');
+    Route::get('/orders/{order}', [AdminController::class, 'ordershow'])->name('orders.show');
+    Route::get('/orders/{order}/edit', [AdminController::class, 'orderEdit'])->name('orders.edit');
+
+    Route::patch('/orders/{order}', [AdminController::class, 'orderUpdate'])->name('orders.update');
+
+    Route::delete('/orders/{order}', [AdminController::class, 'orderdestroy'])->name('orders.destroy');
+
+
 
         /*
         | Customers CRUD (Admin + SuperAdmin)
@@ -72,6 +77,7 @@ Route::middleware(['auth', 'role:super_admin,admin'])
         Route::get('/customers/{user}/edit', [AdminController::class, 'customerEdit'])->name('customer-edit');
         Route::put('/customers/{user}', [AdminController::class, 'customerUpdate'])->name('customer-update');
         Route::delete('/customers/{user}', [AdminController::class, 'customerDestroy'])->name('customer-destroy');
+        
     });
 
 /*
@@ -92,6 +98,7 @@ Route::middleware(['auth', 'role:super_admin'])->group(function () {
         Route::get('/admin/meetings', [MeetingController::class, 'adminIndex'])->name('admin.meetings.index');
         Route::patch('/admin/meetings/{meeting}/status', [MeetingController::class, 'updateStatus'])->name('admin.meetings.update-status');
 
+        
 });
 
 require __DIR__ . '/auth.php';

@@ -15,8 +15,10 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use App\Enums\OrderPhaseEnum;
 use App\Http\Requests\StoreOrderRequest;
+use App\Http\Requests\UpdateAdminRequest;
 use App\Models\OrderItem;
 use App\Models\OrderItemSize;
+use Illuminate\Validation\Rule;
 
 class AdminController extends Controller
 {
@@ -138,14 +140,21 @@ class AdminController extends Controller
             abort(404, 'Admin not found');
         }
 
-        return view('admin.edit', ['admin' => $user]);
+        return view('admin.admin-edit', ['admin' => $user]);
     }
 
     /**
      * Update the specified admin
      */
-    public function update(AdminRequest $request, User $user)
+public function update(UpdateAdminRequest $request, User $user)
     {
+
+        $current = Auth::user();
+$role = $current->role instanceof RoleEnum ? $current->role->value : (string)$current->role;
+
+if ($role !== RoleEnum::SUPER_ADMIN->value && $current->id !== $user->id) {
+    abort(403);
+}
         if (Auth::user()->role !== RoleEnum::SUPER_ADMIN) {
             abort(403, 'Unauthorized');
         }
@@ -400,21 +409,17 @@ class AdminController extends Controller
 
     public function ordershow(Order $order)
     {
-        // Authorization - For customers, check if order belongs to them
         if (Auth::user()->role === RoleEnum::CUSTOMER && $order->customer_id !== Auth::id()) {
             abort(403, 'Unauthorized action.');
         }
 
-        // Eager load all related data
         $order->load([
             'customer',
             'meeting',
             'creator',
             'items.itemSizes.size',
-            'items.sizes' // via many-to-many
         ]);
 
-        // Calculate item totals for display
         $itemTotals = [];
         foreach ($order->items as $item) {
             $totalQuantity = 0;
@@ -424,13 +429,15 @@ class AdminController extends Controller
                 $totalQuantity += $itemSize->quantity;
                 $totalPrice += $item->single_price * $itemSize->quantity;
             }
+
             $itemTotals[$item->id] = [
                 'quantity' => $totalQuantity,
                 'total_price' => $totalPrice,
             ];
         }
 
-        return view('orders.show', compact('order', 'itemTotals'));
+        // ✅ اسم الفيو الصح عندك
+        return view('admin.order-show', compact('order', 'itemTotals'));
     }
     /**
      * Show the form for creating a new order
@@ -467,10 +474,18 @@ class AdminController extends Controller
             abort(403, 'Unauthorized');
         }
 
-        if ($order->current_phase !== OrderPhaseEnum::PENDING && $order->current_phase !== OrderPhaseEnum::CUTTING) {
-            return redirect()->route('admin.order-show', $order->id)
+        $phase = $order->current_phase instanceof \App\Enums\OrderPhaseEnum
+            ? $order->current_phase->value
+            : (string) $order->current_phase;
+
+        if (!in_array($phase, [
+            OrderPhaseEnum::PENDING->value,
+            OrderPhaseEnum::CUTTING->value,
+        ], true)) {
+            return redirect()->route('admin.orders.show', $order->id)
                 ->with('error', 'Order cannot be edited in the current phase.');
         }
+
 
         $order->load(['items.itemSizes.size', 'customer', 'meeting']);
 
@@ -479,88 +494,246 @@ class AdminController extends Controller
             ->with('customer')
             ->get(['id', 'scheduled_date', 'customer_id', 'name']);
         $sizes = Size::all(['id', 'name', 'sort_order']);
-        $phases = OrderPhaseEnum::cases();
+        $phases = OrderPhaseEnum::forDropdown((bool) $order->requires_printing);
 
-        return view('admin.order-edit', compact('order', 'customers', 'meetings', 'sizes', 'phases'));
+        $orderItems = $order->items->map(function ($it) {
+            return [
+                'id'           => $it->id,
+                'name'         => $it->name,
+                'fabric_name'  => $it->fabric_name,
+                'has_printing' => (bool) $it->has_printing,
+                'description'  => $it->description,
+                'single_price' => $it->single_price,
+                'sizes'        => $it->itemSizes->map(function ($sz) {
+                    return [
+                        'size_id'  => $sz->size_id,
+                        'quantity' => $sz->quantity,
+                    ];
+                })->values(),
+            ];
+        })->values();
+        $sizesForJs = $sizes->map(function ($s) {
+            return ['id' => $s->id, 'name' => $s->name];
+        })->values();
+
+
+        return view('admin.order-edit', compact(
+            'order',
+            'customers',
+            'meetings',
+            'sizes',
+            'sizesForJs',
+            'phases',
+            'orderItems'
+        ));
     }
     public function orderstore(StoreOrderRequest $request)
-{
-    $validated = $request->validated();
-    $customer = User::findOrFail($validated['customer_id']);
+    {
+        $validated = $request->validated();
+        $customer = User::findOrFail($validated['customer_id']);
 
-    DB::beginTransaction();
+        DB::beginTransaction();
 
-    try {
-        $totalPrice = 0;
+        try {
+            $totalPrice = 0;
 
-        $order = Order::create([
-            'customer_id'       => $customer->id,
-            'customer_name'     => $customer->name,
-            'brand_name'        => $customer->brand_name ?? null,
-            'meeting_id'        => $validated['meeting_id'] ?? null,
-            'requires_printing' => $validated['requires_printing'] ?? false,
-            'current_phase'     => $validated['current_phase'], // لازم يطابق نوع العمود في DB
-            'total_price'       => 0,
-            'created_by'        => Auth::id(),
-        ]);
-
-        foreach ($validated['items'] as $itemData) {
-            $orderItem = OrderItem::create([
-                'order_id'      => $order->id,
-                'name'          => $itemData['name'],
-                'fabric_name'   => $itemData['fabric_name'] ?? null,
-                'has_printing'  => $itemData['has_printing'] ?? false,
-                'description'   => $itemData['description'] ?? null,
-                'single_price'  => $itemData['single_price'],
+            $order = Order::create([
+                'customer_id'       => $customer->id,
+                'customer_name'     => $customer->name,
+                'brand_name'        => $customer->brand_name ?? null,
+                'meeting_id'        => $validated['meeting_id'] ?? null,
+                'requires_printing' => $validated['requires_printing'] ?? false,
+                'current_phase'     => $validated['current_phase'], // لازم يطابق نوع العمود في DB
+                'total_price'       => 0,
+                'created_by'        => Auth::id(),
             ]);
 
-            foreach ($itemData['sizes'] as $sizeData) {
-                OrderItemSize::create([
-                    'order_item_id' => $orderItem->id,
-                    'size_id'       => $sizeData['size_id'],   // ✅ ID رقمي من جدول sizes
-                    'quantity'      => $sizeData['quantity'],
+            foreach ($validated['items'] as $itemData) {
+                $orderItem = OrderItem::create([
+                    'order_id'      => $order->id,
+                    'name'          => $itemData['name'],
+                    'fabric_name'   => $itemData['fabric_name'] ?? null,
+                    'has_printing'  => $itemData['has_printing'] ?? false,
+                    'description'   => $itemData['description'] ?? null,
+                    'single_price'  => $itemData['single_price'],
                 ]);
 
-                $totalPrice += $itemData['single_price'] * $sizeData['quantity'];
+                foreach ($itemData['sizes'] as $sizeData) {
+                    OrderItemSize::create([
+                        'order_item_id' => $orderItem->id,
+                        'size_id'       => $sizeData['size_id'],   // ✅ ID رقمي من جدول sizes
+                        'quantity'      => $sizeData['quantity'],
+                    ]);
+
+                    $totalPrice += $itemData['single_price'] * $sizeData['quantity'];
+                }
             }
+
+            $order->update(['total_price' => $totalPrice]);
+
+            DB::commit();
+
+            // ✅ redirect صح
+            return redirect()->route('admin.orders.show', $order->id)
+                ->with('success', 'Order created successfully!');
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return back()->withInput()
+                ->with('error', 'Failed to create order: ' . $e->getMessage());
+        }
+    }
+
+
+    public function orderUpdate(Request $request, Order $order)
+    {
+        $user = Auth::user();
+
+        if ($user->role !== RoleEnum::SUPER_ADMIN && $user->role !== RoleEnum::ADMIN) {
+            abort(403, 'Unauthorized');
         }
 
-        $order->update(['total_price' => $totalPrice]);
+        /**
+         * ✅ 1) Quick phase update (from index)
+         * بييجي بـ current_phase + redirect_to فقط
+         */
+        if ($request->filled('current_phase') && !$request->has('items')) {
 
-        DB::commit();
+            // phases المسموحة حسب requires_printing بتاع الاوردر
+            $allowed = array_keys(OrderPhaseEnum::forDropdown((bool) $order->requires_printing));
 
-        // ✅ redirect صح
-        return redirect()->route('admin.orders.show', $order->id)
-            ->with('success', 'Order created successfully!');
-    } catch (\Exception $e) {
-        DB::rollBack();
+            $data = $request->validate([
+                'current_phase' => ['required', Rule::in($allowed)],
+                'redirect_to'   => ['nullable', 'string'],
+            ]);
 
-        return back()->withInput()
-            ->with('error', 'Failed to create order: ' . $e->getMessage());
+            $order->update([
+                'current_phase' => $data['current_phase'],
+            ]);
+
+            return redirect($request->input('redirect_to', route('admin.orders.index')))
+                ->with('success', 'Phase updated successfully!');
+        }
+
+        /**
+         * ✅ 2) Full edit update (from edit page)
+         * هنا بقى نطبق شرط Pending/Cutting
+         */
+        $phase = $order->current_phase instanceof OrderPhaseEnum
+            ? $order->current_phase->value
+            : (string) $order->current_phase;
+
+        if (!in_array($phase, [OrderPhaseEnum::PENDING->value, OrderPhaseEnum::CUTTING->value], true)) {
+            return redirect()->route('admin.orders.show', $order->id)
+                ->with('error', 'Order cannot be edited in the current phase.');
+        }
+
+        $allowed = array_keys(OrderPhaseEnum::forDropdown((bool) $order->requires_printing));
+
+        $validated = $request->validate([
+            'meeting_id'        => ['nullable', 'exists:meetings,id'],
+            'requires_printing' => ['nullable', 'boolean'],
+            'current_phase'     => ['required', Rule::in($allowed)],
+
+            'items'                         => ['required', 'array', 'min:1'],
+            'items.*.id'                    => ['nullable', 'exists:order_items,id'],
+            'items.*.name'                  => ['required', 'string', 'max:255'],
+            'items.*.fabric_name'           => ['nullable', 'string', 'max:255'],
+            'items.*.has_printing'          => ['nullable', 'boolean'],
+            'items.*.description'           => ['nullable', 'string'],
+            'items.*.single_price'          => ['required', 'numeric', 'min:0'],
+
+            'items.*.sizes'                 => ['required', 'array', 'min:1'],
+            'items.*.sizes.*.size_id'       => ['required', 'exists:sizes,id'],
+            'items.*.sizes.*.quantity'      => ['required', 'integer', 'min:1'],
+        ]);
+
+        DB::beginTransaction();
+
+        try {
+            $order->update([
+                'meeting_id'        => $validated['meeting_id'] ?? null,
+                'requires_printing' => (bool)($validated['requires_printing'] ?? false),
+                'current_phase'     => $validated['current_phase'],
+            ]);
+
+            $keptItemIds = [];
+            $total = 0;
+
+            foreach ($validated['items'] as $itemData) {
+
+                if (!empty($itemData['id'])) {
+                    $item = OrderItem::where('order_id', $order->id)
+                        ->where('id', $itemData['id'])
+                        ->firstOrFail();
+
+                    $item->update([
+                        'name'         => $itemData['name'],
+                        'fabric_name'  => $itemData['fabric_name'] ?? null,
+                        'has_printing' => (bool)($itemData['has_printing'] ?? false),
+                        'description'  => $itemData['description'] ?? null,
+                        'single_price' => $itemData['single_price'],
+                    ]);
+                } else {
+                    $item = OrderItem::create([
+                        'order_id'     => $order->id,
+                        'name'         => $itemData['name'],
+                        'fabric_name'  => $itemData['fabric_name'] ?? null,
+                        'has_printing' => (bool)($itemData['has_printing'] ?? false),
+                        'description'  => $itemData['description'] ?? null,
+                        'single_price' => $itemData['single_price'],
+                    ]);
+                }
+
+                $keptItemIds[] = $item->id;
+
+                $item->itemSizes()->delete();
+
+                foreach ($itemData['sizes'] as $sizeData) {
+                    OrderItemSize::create([
+                        'order_item_id' => $item->id,
+                        'size_id'       => $sizeData['size_id'],
+                        'quantity'      => $sizeData['quantity'],
+                    ]);
+
+                    $total += $itemData['single_price'] * $sizeData['quantity'];
+                }
+            }
+
+            $order->items()->whereNotIn('id', $keptItemIds)->delete();
+
+            $order->update(['total_price' => $total]);
+
+            DB::commit();
+
+            return redirect()->route('admin.orders.show', $order->id)
+                ->with('success', 'Order updated successfully!');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->withInput()->with('error', 'Failed to update order: ' . $e->getMessage());
+        }
     }
-}
 
     public function orderdestroy(Order $order)
-{
-    if ($order->current_phase !== OrderPhaseEnum::PENDING->value) {
-        return redirect()->route('admin.orders.show', $order->id)
-            ->with('error', 'Only pending orders can be deleted.');
+    {
+        if ($order->current_phase !== OrderPhaseEnum::PENDING->value) {
+            return redirect()->route('admin.orders.show', $order->id)
+                ->with('error', 'Only pending orders can be deleted.');
+        }
+
+        DB::beginTransaction();
+
+        try {
+            $order->delete();
+            DB::commit();
+
+            return redirect()->route('admin.orders.index')
+                ->with('success', 'Order deleted successfully.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return redirect()->route('admin.orders.show', $order->id)
+                ->with('error', 'Failed to delete order: ' . $e->getMessage());
+        }
     }
-
-    DB::beginTransaction();
-
-    try {
-        $order->delete();
-        DB::commit();
-
-        return redirect()->route('admin.orders.index')
-            ->with('success', 'Order deleted successfully.');
-    } catch (\Exception $e) {
-        DB::rollBack();
-
-        return redirect()->route('admin.orders.show', $order->id)
-            ->with('error', 'Failed to delete order: ' . $e->getMessage());
-    }
-}
-
 }

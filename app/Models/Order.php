@@ -42,7 +42,7 @@ class Order extends Model
         'requires_printing' => 'boolean',
         'total_price' => 'integer',
         'completed_at' => 'datetime',
-        'current_phase' => OrderPhaseEnum::class
+        'current_phase'     => OrderPhaseEnum::class,
     ];
 
     //relations
