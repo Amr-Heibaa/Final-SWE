@@ -183,7 +183,7 @@ return redirect()->route('admin.index')
             abort(404, 'Admin not found');
         }
 
-        $user->forceDelete();
+        $user->Delete();
 
         return redirect()->route('admin.index')->with('success', 'Admin deleted successfully');
     }
@@ -346,7 +346,7 @@ return redirect()->route('admin.index')
         // Admin can only delete their own customers
       
 
-        $user->forceDelete();
+        $user->Delete();
 
         return redirect()->route('admin.customer-index')->with('success', 'Customer deleted successfully');
     }
@@ -687,25 +687,30 @@ return redirect()->route('admin.index')
     }
 
     public function orderdestroy(Order $order)
-    {
-        if ($order->current_phase !== OrderPhaseEnum::PENDING->value) {
-            return redirect()->route('admin.orders.show', $order->id)
-                ->with('error', 'Only pending orders can be deleted.');
-        }
+{
+    $phase = $order->current_phase instanceof OrderPhaseEnum
+        ? $order->current_phase->value
+        : (string) $order->current_phase;
 
-        DB::beginTransaction();
-
-        try {
-            $order->delete();
-            DB::commit();
-
-            return redirect()->route('admin.orders.index')
-                ->with('success', 'Order deleted successfully.');
-        } catch (\Exception $e) {
-            DB::rollBack();
-
-            return redirect()->route('admin.orders.show', $order->id)
-                ->with('error', 'Failed to delete order: ' . $e->getMessage());
-        }
+    if ($phase !== OrderPhaseEnum::PENDING->value) {
+        return redirect()->route('admin.orders.show', $order->id)
+            ->with('error', 'Only pending orders can be deleted.');
     }
+
+    DB::beginTransaction();
+
+    try {
+        $order->delete();
+        DB::commit();
+
+        return redirect()->route('admin.orders.index')
+            ->with('success', 'Order deleted successfully.');
+    } catch (\Exception $e) {
+        DB::rollBack();
+
+        return redirect()->route('admin.orders.show', $order->id)
+            ->with('error', 'Failed to delete order: ' . $e->getMessage());
+    }
+}
+
 }
