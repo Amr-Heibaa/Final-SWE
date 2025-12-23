@@ -125,10 +125,8 @@
                                 $phase = $order->current_phase?->value ?? $order->current_phase;
                                 $isPrinting = (bool)($order->requires_printing ?? false);
 
-                                // لو phases array بالشكل: ['pending' => 'Pending', ...]
                                 $phaseLabel = $phases[(string)$phase] ?? ucfirst((string)$phase);
 
-                                // نرجع لنفس الفلاتر بعد تحديث phase
                                 $backUrl = url()->current() . (request()->getQueryString() ? ('?' . request()->getQueryString()) : '');
                                 @endphp
 
@@ -157,7 +155,6 @@
                                         @endif
                                     </td>
 
-                                    {{-- ✅ Phase + Quick Update --}}
                                     <td class="px-4 py-3 text-sm">
                                         <div class="flex items-center gap-2">
                                             <span class="px-2 py-1 rounded text-xs font-semibold bg-white/10 border border-white/10 text-white whitespace-nowrap">
@@ -169,7 +166,6 @@
                                                 @csrf
                                                 @method('PATCH')
 
-                                                {{-- عشان نرجع لنفس صفحة الفلاتر --}}
                                                 <input type="hidden" name="redirect_to" value="{{ $backUrl }}">
 
                                                 <select name="current_phase"
@@ -241,7 +237,7 @@
                         </table>
                     </div>
 
-                    {{-- Pagination (keep filters) --}}
+                    {{-- Pagination--}}
                     <div class="mt-6">
                         {{ $orders->appends(request()->query())->links() }}
                     </div>

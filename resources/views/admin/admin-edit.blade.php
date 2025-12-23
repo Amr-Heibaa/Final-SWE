@@ -31,7 +31,7 @@
                         </div>
                     </div>
 
-                    {{-- Flash messages --}}
+                    
                     @if(session('success'))
                         <div class="mb-4 px-4 py-3 rounded bg-green-600/20 text-green-200 border border-green-600/30">
                             {{ session('success') }}
@@ -80,7 +80,7 @@
                                        required>
                             </div>
 
-                            {{-- Phone (لو موجود عندك في الجدول) --}}
+                            {{-- Phone --}}
                             <div class="col-span-12 md:col-span-6">
                                 <label class="block text-sm mb-1 text-white/80">Phone (optional)</label>
                                 <input type="text"
@@ -110,7 +110,7 @@
                                        placeholder="••••••••">
                             </div>
 
-                            {{-- Role (Read only) --}}
+                            {{-- Role --}}
                             <div class="col-span-12 md:col-span-6">
                                 <label class="block text-sm mb-1 text-white/80">Role</label>
                                 <input type="text"

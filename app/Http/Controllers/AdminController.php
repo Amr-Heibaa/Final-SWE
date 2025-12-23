@@ -28,13 +28,11 @@ class AdminController extends Controller
         $user = Auth::user();
         $role = $user->role instanceof RoleEnum ? $user->role->value : (string)$user->role;
 
-        // CUSTOMER: نفس الوضع القديم (meetings بتاعته)
         if ($role === RoleEnum::CUSTOMER->value || $role === 'customer') {
             $meetings = Meeting::where('customer_id', $user->id)->latest()->paginate(10);
             return view('dashboard', compact('meetings'));
         }
 
-        // ADMIN: يشوف customers اللي عنده + orders بتاعتهم
         if ($role === RoleEnum::ADMIN->value || $role === 'admin') {
             $customerIds = Order::where('created_by', $user->id)
                 ->pluck('customer_id')
@@ -54,7 +52,6 @@ class AdminController extends Controller
             return view('dashboard', compact('customers', 'orders'));
         }
 
-        // SUPERADMIN: يشوف admins + customers + orders (كله)
         if ($role === RoleEnum::SUPER_ADMIN->value || $role === 'superAdmin') {
             $admins = User::where('role', RoleEnum::ADMIN->value)->latest()->paginate(10);
             $customers = User::where('role', RoleEnum::CUSTOMER->value)->latest()->paginate(10);
@@ -159,7 +156,6 @@ return redirect()->route('admin.index')
 
     $data = $request->validated();
 
-    // لو الباسورد فاضي → متغيروش
     if (empty($data['password'])) {
         unset($data['password']);
     }
@@ -423,7 +419,6 @@ return redirect()->route('admin.index')
             ];
         }
 
-        // ✅ اسم الفيو الصح عندك
         return view('admin.order-show', compact('order', 'itemTotals'));
     }
     /**
@@ -442,7 +437,6 @@ return redirect()->route('admin.index')
             ->with('customer')
             ->get(['id', 'scheduled_date', 'customer_id', 'name']);
 
-        // ✅ من DB مش Enum Arrays
         $sizes = Size::orderBy('sort_order')->get(['id', 'name']);
 
         $phases = OrderPhaseEnum::cases();
@@ -530,7 +524,7 @@ return redirect()->route('admin.index')
                 'brand_name'        => $customer->brand_name ?? null,
                 'meeting_id'        => $validated['meeting_id'] ?? null,
                 'requires_printing' => $validated['requires_printing'] ?? false,
-                'current_phase'     => $validated['current_phase'], // لازم يطابق نوع العمود في DB
+                'current_phase'     => $validated['current_phase'], 
                 'total_price'       => 0,
                 'created_by'        => Auth::id(),
             ]);
@@ -548,7 +542,7 @@ return redirect()->route('admin.index')
                 foreach ($itemData['sizes'] as $sizeData) {
                     OrderItemSize::create([
                         'order_item_id' => $orderItem->id,
-                        'size_id'       => $sizeData['size_id'],   // ✅ ID رقمي من جدول sizes
+                        'size_id'       => $sizeData['size_id'],   
                         'quantity'      => $sizeData['quantity'],
                     ]);
 
@@ -560,7 +554,7 @@ return redirect()->route('admin.index')
 
             DB::commit();
 
-            // ✅ redirect صح
+            
             return redirect()->route('admin.orders.show', $order->id)
                 ->with('success', 'Order created successfully!');
         } catch (\Exception $e) {
@@ -580,13 +574,8 @@ return redirect()->route('admin.index')
             abort(403, 'Unauthorized');
         }
 
-        /**
-         * ✅ 1) Quick phase update (from index)
-         * بييجي بـ current_phase + redirect_to فقط
-         */
         if ($request->filled('current_phase') && !$request->has('items')) {
 
-            // phases المسموحة حسب requires_printing بتاع الاوردر
             $allowed = array_keys(OrderPhaseEnum::forDropdown((bool) $order->requires_printing));
 
             $data = $request->validate([
@@ -602,10 +591,6 @@ return redirect()->route('admin.index')
                 ->with('success', 'Phase updated successfully!');
         }
 
-        /**
-         * ✅ 2) Full edit update (from edit page)
-         * هنا بقى نطبق شرط Pending/Cutting
-         */
         $phase = $order->current_phase instanceof OrderPhaseEnum
             ? $order->current_phase->value
             : (string) $order->current_phase;

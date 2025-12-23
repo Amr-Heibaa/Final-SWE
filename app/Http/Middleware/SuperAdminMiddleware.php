@@ -15,7 +15,7 @@ class SuperAdminMiddleware
 
         $role = $user->role?->value ?? (string) $user->role;
 
-        if ($role !== 'super_admin' && $role !== 'superAdmin') { // اختار واحدة بس بعد ما توحّد
+        if ($role !== 'super_admin' && $role !== 'superAdmin') { 
             abort(403);
         }
 

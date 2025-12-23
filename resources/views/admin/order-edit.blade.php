@@ -37,7 +37,7 @@
                         @csrf
                         @method('PATCH')
 
-                        {{-- Customer (Readonly) --}}
+                        {{-- Customer --}}
                         <div class="p-4 rounded border border-white/10 bg-black/20">
                             <div class="text-white/70 text-sm mb-1">Customer</div>
                             <div class="text-white font-semibold">
@@ -45,7 +45,7 @@
                             </div>
                         </div>
 
-                        {{-- Meeting (optional) --}}
+                        {{-- Meeting --}}
                         <div>
                             <label class="block text-sm mb-1 text-white/80">Meeting (optional)</label>
                             <select name="meeting_id"
@@ -60,7 +60,7 @@
                             </select>
                         </div>
 
-                        {{-- Phase (Change) --}}
+                        {{-- Phase --}}
                         <div>
                             <label class="block text-sm mb-1 text-white/80">Phase</label>
                             <select name="current_phase"
@@ -123,7 +123,7 @@
     </div>
 
     <script>
-        // ✅ جهزين من الكنترولر (متعملش map جوه blade)
+
         const SIZES = @json($sizesForJs);
         const EXISTING_ITEMS = @json($orderItems);
         const OLD_ITEMS = @json(old('items', []));
@@ -300,21 +300,17 @@
 
         btnAddItem.addEventListener('click', () => addItem());
 
-        // Init:
         (function init() {
-            // لو فيه validation errors رجّع old
             if (Array.isArray(OLD_ITEMS) && OLD_ITEMS.length) {
                 OLD_ITEMS.forEach(it => addItem(it));
                 return;
             }
 
-            // غير كده اعرض بيانات الاوردر الحالية
             if (Array.isArray(EXISTING_ITEMS) && EXISTING_ITEMS.length) {
                 EXISTING_ITEMS.forEach(it => addItem(it));
                 return;
             }
 
-            // fallback
             addItem();
         })();
     </script>

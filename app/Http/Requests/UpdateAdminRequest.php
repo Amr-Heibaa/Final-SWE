@@ -23,12 +23,11 @@ class UpdateAdminRequest extends FormRequest
 
     public function rules(): array
     {
-        $admin = $this->route('user'); // نفس اسم route parameter
+        $admin = $this->route('user');
 
         return [
             'name'  => ['required', 'string', 'max:255'],
 
-            // ✅ مهم جدًا ignore نفس اليوزر
             'email' => [
                 'required',
                 'email',
@@ -37,7 +36,6 @@ class UpdateAdminRequest extends FormRequest
 
             'phone' => ['nullable', 'string', 'max:20'],
 
-            // ✅ password اختياري
             'password' => ['nullable', 'string', 'min:8', 'confirmed'],
         ];
     }

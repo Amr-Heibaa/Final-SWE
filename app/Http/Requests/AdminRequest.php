@@ -11,7 +11,6 @@ class AdminRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        // ✅ CORRECT - compare enum objects
         return $this->user()->role === RoleEnum::SUPER_ADMIN;
     }
 

@@ -60,7 +60,7 @@
                             </select>
                         </div>
 
-                        {{-- Meeting (optional) --}}
+                        {{-- Meeting --}}
                         <div>
                             <label class="block text-sm mb-1 text-white/80">Meeting (optional)</label>
                             <select name="meeting_id"
@@ -96,9 +96,7 @@
 
                         <hr class="border-white/10">
 
-                        {{-- =========================
-                           ITEMS (Dynamic)
-                        ========================== --}}
+                        {{-- ITEMS --}}
                         <div class="flex items-center justify-between">
                             <h4 class="text-white font-semibold">Items</h4>
 
@@ -129,8 +127,6 @@
         </div>
     </div>
 
-    {{-- Sizes data for JS --}}
-
 
     <script>
         const SIZES = @json($sizes);
@@ -156,7 +152,7 @@
             return `
                 <div class="grid grid-cols-12 gap-3 items-end size-row" data-size-row>
                     <div class="col-span-7">
-                        <label class="block text-sm mb-1 text-white/80">Size</label>
+                        <label class="block text-sm mb-1 text-gray/80">Size</label>
                         <select name="items[${itemIndex}][sizes][${sizeIndex}][size_id]" required>            
                     class="w-full px-3 py-2 rounded bg-black/30 border border-white/10 text-white" required>
                             ${sizeOptionsHTML(sizeId)}
@@ -164,7 +160,7 @@
                     </div>
 
                     <div class="col-span-3">
-                        <label class="block text-sm mb-1 text-white/80">Quantity</label>
+                        <label class="block text-sm mb-1 text-gray/80">Quantity</label>
                         <input type="number" min="1"
                                name="items[${itemIndex}][sizes][${sizeIndex}][quantity]"
                                value="${qty}"
@@ -262,27 +258,22 @@
         function addItem(old = null) {
             const itemIndex = itemsWrap.querySelectorAll('[data-item-card]').length;
 
-            // لو old موجود (رجوع validation) نزبط sizes indices
             let itemOld = old ?? null;
             if (itemOld && Array.isArray(itemOld.sizes) && itemOld.sizes.length) {
-                // هنحط أول size بس هنا، والباقي هنضيفه بعد ما نحط الكارد
             }
 
             itemsWrap.insertAdjacentHTML('beforeend', buildItemCard(itemIndex, itemOld ?? {}));
 
-            // لو فيه sizes متعددة من old → نضيفهم
             if (itemOld && Array.isArray(itemOld.sizes) && itemOld.sizes.length > 1) {
                 const card = itemsWrap.lastElementChild;
                 const sizesWrap = card.querySelector('[data-sizes-wrap]');
 
-                // أول واحدة اتعملت بالفعل (index 0)
                 for (let i = 1; i < itemOld.sizes.length; i++) {
                     sizesWrap.insertAdjacentHTML('beforeend', buildSizeRow(itemIndex, i, itemOld.sizes[i]));
                 }
             }
         }
 
-        // Events (delegation)
         itemsWrap.addEventListener('click', (e) => {
             const card = e.target.closest('[data-item-card]');
             if (!card) return;
@@ -290,8 +281,7 @@
             // Remove Item
             if (e.target.matches('[data-remove-item]')) {
                 card.remove();
-                // IMPORTANT: مش هنعيد ترقيم indices (عشان الموضوع كبير)
-                // Laravel هيستقبل array keys زي ما هي حتى لو فيها gaps.
+
                 return;
             }
 
@@ -314,13 +304,12 @@
 
         btnAddItem.addEventListener('click', () => addItem());
 
-        // Init: لو رجع old inputs بعد validation error
         (function init() {
             const oldItems = @json(old('items', []));
             if (Array.isArray(oldItems) && oldItems.length) {
                 oldItems.forEach(it => addItem(it));
             } else {
-                addItem(); // default 1 item
+                addItem(); 
             }
         })();
     </script>

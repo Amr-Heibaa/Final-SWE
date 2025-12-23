@@ -28,14 +28,13 @@ Route::middleware(['auth'])->group(function () {
 
 /*
 |---------------------------------------------------------
-| Customer Orders (لو انت محتاجها للـ customer فقط)
+| Customer Orders 
 |---------------------------------------------------------
 */
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
     Route::get('/orders/{order}', [OrderController::class, 'show'])->name('orders.show');
 
-    // لو لسه في navigation بتنده على orders.my-orders
     Route::get('/my-orders', [OrderController::class, 'myOrders'])->name('orders.my-orders');
 });
 
@@ -86,7 +85,7 @@ Route::middleware(['auth', 'role:super_admin,admin'])
 
 /*
 |---------------------------------------------------------
-| SuperAdmin فقط: Admins CRUD
+| SuperAdmin 
 |---------------------------------------------------------
 */
 Route::middleware(['auth', 'role:super_admin'])->group(function () {

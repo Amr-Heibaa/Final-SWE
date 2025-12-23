@@ -60,7 +60,6 @@ class User extends Authenticatable
         return $this->hasMany(Order::class, 'customer_id');
     }
 
-    // (اختياري) لو محتاج تجيب الأوردرز اللي اتعملت بواسطة الأدمن/الإيديتور
     public function createdOrders(): HasMany
     {
         return $this->hasMany(Order::class, 'created_by');

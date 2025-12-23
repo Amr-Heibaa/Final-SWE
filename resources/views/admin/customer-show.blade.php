@@ -86,7 +86,7 @@
                         <div class="rounded border border-white/10 bg-black/20 p-4">
                             <p class="text-white/60 text-xs uppercase tracking-widest mb-1">Assigned Admin</p>
                             <p class="text-white text-sm">
-                                {{-- لو عندك علاقة admin() في User model استخدمها --}}
+                                
                                 {{ optional($customer->admin)->name ?? ($customer->admin_id ?? '—') }}
                             </p>
                         </div>

@@ -74,7 +74,6 @@
                                    required>
                         </div>
 
-                        {{-- مفيش Password هنا intentionally --}}
 
                         <div class="pt-2 flex items-center gap-2">
                             <button type="submit"

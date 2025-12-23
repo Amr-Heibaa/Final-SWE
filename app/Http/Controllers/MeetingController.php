@@ -130,7 +130,6 @@ class MeetingController extends Controller
 {
     $user = Auth::user();
 
-    // أمان
     if (!in_array($user->role, [RoleEnum::SUPER_ADMIN, RoleEnum::ADMIN])) {
         abort(403);
     }
