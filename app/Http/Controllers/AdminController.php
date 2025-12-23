@@ -22,6 +22,7 @@ use Illuminate\Validation\Rule;
 
 class AdminController extends Controller
 {
+    
     public function dashboard()
     {
         $user = Auth::user();
@@ -124,19 +125,23 @@ class AdminController extends Controller
             abort(404, 'Admin not found');
         }
 
-        return view('admin.show', ['admin' => $user]);
-    }
+return redirect()->route('admin.index')
+    ->with('success', 'Admin updated successfully');    }
 
     /**
      * Show the form for editing an admin
      */
     public function edit(User $user)
     {
-        if (Auth::user()->role !== RoleEnum::SUPER_ADMIN) {
+        $current = Auth::user();
+        $role = $current->role instanceof RoleEnum ? $current->role->value : (string) $current->role;
+
+        if ($role !== RoleEnum::SUPER_ADMIN->value) {
             abort(403, 'Unauthorized');
         }
 
-        if ($user->role !== RoleEnum::ADMIN) {
+        $userRole = $user->role instanceof RoleEnum ? $user->role->value : (string) $user->role;
+        if ($userRole !== RoleEnum::ADMIN->value) {
             abort(404, 'Admin not found');
         }
 
@@ -146,35 +151,28 @@ class AdminController extends Controller
     /**
      * Update the specified admin
      */
-public function update(UpdateAdminRequest $request, User $user)
-    {
-
-        $current = Auth::user();
-$role = $current->role instanceof RoleEnum ? $current->role->value : (string)$current->role;
-
-if ($role !== RoleEnum::SUPER_ADMIN->value && $current->id !== $user->id) {
-    abort(403);
-}
-        if (Auth::user()->role !== RoleEnum::SUPER_ADMIN) {
-            abort(403, 'Unauthorized');
-        }
-
-        if ($user->role !== RoleEnum::ADMIN) {
-            abort(404, 'Admin not found');
-        }
-
-        $validated = $request->validated();
-
-        if (!empty($validated['password'])) {
-            $validated['password'] = Hash::make($validated['password']);
-        } else {
-            unset($validated['password']);
-        }
-
-        $user->update($validated);
-
-        return redirect()->route('admin.show', $user)->with('success', 'Admin updated successfully');
+   public function update(UpdateAdminRequest $request, User $user)
+{
+    if ($user->role !== RoleEnum::ADMIN) {
+        abort(404, 'Admin not found');
     }
+
+    $data = $request->validated();
+
+    // لو الباسورد فاضي → متغيروش
+    if (empty($data['password'])) {
+        unset($data['password']);
+    }
+
+    $user->update($data);
+
+    return redirect()
+        ->route('admin.show', $user)
+        ->with('success', 'Admin updated successfully');
+}
+
+
+
 
     /**
      * Delete the specified admin
@@ -201,22 +199,15 @@ if ($role !== RoleEnum::SUPER_ADMIN->value && $current->id !== $user->id) {
      */
     public function customerIndex()
     {
-        $user = Auth::user();
+         $user = Auth::user();
 
-        if ($user->role !== RoleEnum::SUPER_ADMIN && $user->role !== RoleEnum::ADMIN) {
+     if ($user->role !== RoleEnum::SUPER_ADMIN && $user->role !== RoleEnum::ADMIN) {
             abort(403, 'Unauthorized');
         }
 
-        if ($user->role === RoleEnum::SUPER_ADMIN) {
-            $customers = User::where('role', RoleEnum::CUSTOMER)->get();
-        } else {
-            // Admin sees only their customers
-            $customers = User::where('role', RoleEnum::CUSTOMER)
-                ->where('admin_id', $user->id)
-                ->get();
-        }
+    $customers = User::where('role', RoleEnum::CUSTOMER)->get();
 
-        return view('admin.customer-index', ['customers' => $customers]);
+    return view('admin.customer-index', ['customers' => $customers]);
     }
 
     /**
@@ -256,9 +247,9 @@ if ($role !== RoleEnum::SUPER_ADMIN->value && $current->id !== $user->id) {
         $validated['role'] = RoleEnum::CUSTOMER;
 
         // Assign to admin if admin is creating, super_admin creates unassigned
-        if ($user->role === RoleEnum::ADMIN) {
-            $validated['admin_id'] = $user->id;
-        }
+        // if ($user->role === RoleEnum::ADMIN) {
+        //     $validated['admin_id'] = $user->id;
+        // }
 
         User::create($validated);
 
@@ -270,20 +261,24 @@ if ($role !== RoleEnum::SUPER_ADMIN->value && $current->id !== $user->id) {
      */
     public function customerShow(User $user)
     {
-        $currentUser = Auth::user();
+           $Currentuser = Auth::user();
+         
 
-        if ($currentUser->role !== RoleEnum::SUPER_ADMIN && $currentUser->role !== RoleEnum::ADMIN) {
+    
+           if ($Currentuser->role !== RoleEnum::SUPER_ADMIN && $Currentuser->role !== RoleEnum::ADMIN) {
             abort(403, 'Unauthorized');
         }
+      
+
+    
+
 
         if ($user->role !== RoleEnum::CUSTOMER) {
             abort(404, 'Customer not found');
         }
 
         // Admin can only see their own customers
-        if ($currentUser->role === RoleEnum::ADMIN && $user->admin_id !== $currentUser->id) {
-            abort(403, 'Unauthorized');
-        }
+   
 
         return view('admin.customer-show', ['customer' => $user]);
     }
@@ -303,10 +298,7 @@ if ($role !== RoleEnum::SUPER_ADMIN->value && $current->id !== $user->id) {
             abort(404, 'Customer not found');
         }
 
-        // Admin can only edit their own customers
-        if ($currentUser->role === RoleEnum::ADMIN && $user->admin_id !== $currentUser->id) {
-            abort(403, 'Unauthorized');
-        }
+     
 
         return view('admin.customer-edit', ['customer' => $user]);
     }
@@ -326,10 +318,7 @@ if ($role !== RoleEnum::SUPER_ADMIN->value && $current->id !== $user->id) {
             abort(404, 'Customer not found');
         }
 
-        // Admin can only update their own customers
-        if ($currentUser->role === RoleEnum::ADMIN && $user->admin_id !== $currentUser->id) {
-            abort(403, 'Unauthorized');
-        }
+     
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
@@ -359,9 +348,7 @@ if ($role !== RoleEnum::SUPER_ADMIN->value && $current->id !== $user->id) {
         }
 
         // Admin can only delete their own customers
-        if ($currentUser->role === RoleEnum::ADMIN && $user->admin_id !== $currentUser->id) {
-            abort(403, 'Unauthorized');
-        }
+      
 
         $user->forceDelete();
 

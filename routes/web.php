@@ -65,6 +65,10 @@ Route::middleware(['auth', 'role:super_admin,admin'])
 
     Route::delete('/orders/{order}', [AdminController::class, 'orderdestroy'])->name('orders.destroy');
 
+     Route::get('/meetings', [MeetingController::class, 'adminIndex'])->name('meetings.index');
+        Route::patch('/meetings/{meeting}/status', [MeetingController::class, 'updateStatus'])->name('meetings.update-status');
+
+
 
 
         /*
@@ -95,9 +99,8 @@ Route::middleware(['auth', 'role:super_admin'])->group(function () {
     Route::delete('/admin/admins/{user}', [AdminController::class, 'destroy'])->name('admin.destroy');
 
         Route::delete('/admin/admins/{user}', [AdminController::class, 'destroy'])->name('admin.destroy');
-        Route::get('/admin/meetings', [MeetingController::class, 'adminIndex'])->name('admin.meetings.index');
-        Route::patch('/admin/meetings/{meeting}/status', [MeetingController::class, 'updateStatus'])->name('admin.meetings.update-status');
-
+  
+        
         
 });
 

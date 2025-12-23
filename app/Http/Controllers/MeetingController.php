@@ -137,7 +137,6 @@ class MeetingController extends Controller
 
     $query = Meeting::with('customer')->latest();
 
-    // لو جاي customer_id من الزرار
     if ($request->filled('customer_id')) {
         $query->where('customer_id', $request->customer_id);
     }

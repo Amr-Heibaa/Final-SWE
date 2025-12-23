@@ -42,10 +42,7 @@ class MeetingRequest extends FormRequest
                 'after:now',
             ],
 
-            // 'status' => [
-            //     'nullable',
-            //     Rule::in(['pending', 'completed', 'cancelled']),
-            // ],
+      
         ];
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Enums\RoleEnum;
 use Closure;
 use Illuminate\Http\Request;
 
@@ -10,20 +11,19 @@ class RoleMiddleware
     public function handle(Request $request, Closure $next, ...$roles)
     {
         $user = $request->user();
-        if (!$user) abort(403);
+        abort_unless($user, 403);
 
-        // لو role Enum خد value، لو string استخدمه زي ما هو
-        $userRole = is_object($user->role) && property_exists($user->role, 'value')
+        $userRole = $user->role instanceof RoleEnum
             ? $user->role->value
             : (string) $user->role;
 
-        // normalize (case-insensitive)
-        $userRole = strtolower($userRole);
+        $userRole = strtolower(trim($userRole));
         $roles = array_map(fn ($r) => strtolower(trim($r)), $roles);
 
-        if (!in_array($userRole, $roles, true)) {
-            abort(403);
-        }
+        // optional alias support
+        if ($userRole === 'superadmin') $userRole = 'super_admin';
+
+        abort_unless(in_array($userRole, $roles, true), 403);
 
         return $next($request);
     }

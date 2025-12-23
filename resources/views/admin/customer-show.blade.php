@@ -94,16 +94,7 @@
                     </div>
 
                     <div class="mt-6 flex flex-wrap gap-2">
-                        {{-- لو عندك صفحة Orders by customer من الأدمن --}}
-
-
-                        {{-- <a href="{{ route('admin.orders.index', ['customer_id' => $customer->id]) }}"
-                           class="inline-flex items-center px-4 py-2 btn-brand text-xs uppercase tracking-widest">
-                            View Orders
-                        </a> --}}
-
-                        {{-- لو عندك صفحة Meetings للعميل --}}
-
+       
                         
                         <a href="{{ route('admin.meetings.index', ['customer_id' => $customer->id]) }}"
                            class="inline-flex items-center px-4 py-2 btn-ghost text-xs uppercase tracking-widest">
