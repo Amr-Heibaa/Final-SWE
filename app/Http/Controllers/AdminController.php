@@ -23,46 +23,6 @@ use Illuminate\Validation\Rule;
 class AdminController extends Controller
 {
     
-    public function dashboard()
-    {
-        $user = Auth::user();
-        $role = $user->role instanceof RoleEnum ? $user->role->value : (string)$user->role;
-
-        if ($role === RoleEnum::CUSTOMER->value || $role === 'customer') {
-            $meetings = Meeting::where('customer_id', $user->id)->latest()->paginate(10);
-            return view('dashboard', compact('meetings'));
-        }
-
-        if ($role === RoleEnum::ADMIN->value || $role === 'admin') {
-            $customerIds = Order::where('created_by', $user->id)
-                ->pluck('customer_id')
-                ->unique()
-                ->values();
-
-            $customers = User::where('role', RoleEnum::CUSTOMER->value)
-                ->whereIn('id', $customerIds)
-                ->latest()
-                ->paginate(10);
-
-            $orders = Order::with('customer')
-                ->where('created_by', $user->id)
-                ->latest()
-                ->paginate(10);
-
-            return view('dashboard', compact('customers', 'orders'));
-        }
-
-        if ($role === RoleEnum::SUPER_ADMIN->value || $role === 'superAdmin') {
-            $admins = User::where('role', RoleEnum::ADMIN->value)->latest()->paginate(10);
-            $customers = User::where('role', RoleEnum::CUSTOMER->value)->latest()->paginate(10);
-            $orders = Order::with('customer')->latest()->paginate(10);
-
-            return view('dashboard', compact('admins', 'customers', 'orders'));
-        }
-
-        abort(403);
-    }
-
     // ==================== ADMIN MANAGEMENT (SUPER_ADMIN ONLY) ====================
 
     /**
@@ -712,5 +672,47 @@ return redirect()->route('admin.index')
             ->with('error', 'Failed to delete order: ' . $e->getMessage());
     }
 }
+
+
+    public function dashboard()
+    {
+        $user = Auth::user();
+        $role = $user->role instanceof RoleEnum ? $user->role->value : (string)$user->role;
+
+        if ($role === RoleEnum::CUSTOMER->value || $role === 'customer') {
+            $meetings = Meeting::where('customer_id', $user->id)->latest()->paginate(10);
+            return view('dashboard', compact('meetings'));
+        }
+
+        if ($role === RoleEnum::ADMIN->value || $role === 'admin') {
+            $customerIds = Order::where('created_by', $user->id)
+                ->pluck('customer_id')
+                ->unique()
+                ->values();
+
+            $customers = User::where('role', RoleEnum::CUSTOMER->value)
+                ->whereIn('id', $customerIds)
+                ->latest()
+                ->paginate(10);
+
+            $orders = Order::with('customer')
+                ->where('created_by', $user->id)
+                ->latest()
+                ->paginate(10);
+
+            return view('dashboard', compact('customers', 'orders'));
+        }
+
+        if ($role === RoleEnum::SUPER_ADMIN->value || $role === 'superAdmin') {
+            $admins = User::where('role', RoleEnum::ADMIN->value)->latest()->paginate(10);
+            $customers = User::where('role', RoleEnum::CUSTOMER->value)->latest()->paginate(10);
+            $orders = Order::with('customer')->latest()->paginate(10);
+
+            return view('dashboard', compact('admins', 'customers', 'orders'));
+        }
+
+        abort(403);
+    }
+
 
 }

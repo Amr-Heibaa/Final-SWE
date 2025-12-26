@@ -6,7 +6,7 @@
     </x-slot>
 
     @php
-    $role = auth()->user()->role?->value ?? auth()->user()->role; // enum أو string
+    $role = auth()->user()->role?->value ?? auth()->user()->role; 
     $isCustomer = ($role === 'customer');
     $isAdmin = ($role === 'admin');
     $isSuperAdmin = ($role === 'superAdmin' || $role === 'superadmin' || $role === 'super_admin');
@@ -17,7 +17,6 @@
 
             {{-- =========================
                  ADMIN / SUPER ADMIN PANEL
-                 (مفيش customers.create هنا نهائي)
             ========================== --}}
             @if($isAdmin || $isSuperAdmin)
             <div class="dash-card overflow-hidden mb-6">
@@ -70,7 +69,6 @@
 
             {{-- =========================
                  CUSTOMER DASHBOARD
-                 (زي ما هو عندك)
             ========================== --}}
             @if($isCustomer)
             <div class="dash-card overflow-hidden">
